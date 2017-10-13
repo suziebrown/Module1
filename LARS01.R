@@ -2,7 +2,7 @@
 # Author: Xiaohui Chen (xiaohuic@ece.ubc.ca)
 # Version: 2012-Feb
 
-lars <-function(X, Y, option, t, standardize) <-{
+lars <-function(X, Y, option, t, standardize){
 
 # Least Angle Regression (LAR) algorithm.
 # Ref: Efron et. al. (2004) Least angle regression. Annals of Statistics.
@@ -48,7 +48,7 @@ if (standardize){
   Y = Y-mean(Y)
 }
 
-m = min(p,n-1); % Maximal number of variables in the final active set
+m = min(p,n-1); # Maximal number of variables in the final active set
 T = length(t);
 
 beta = matrix(0, 1, p)
@@ -68,14 +68,14 @@ tt = t
 # LARS loop
 while (nVars < m){
   i = i+1
-  c = t(X)*(Y-mu)  # Current correlation
-  C = max(abs(c))    # Maximal current absolute correlation
+  corr = t(X)*(Y-mu)  # Current correlation
+  C = max(abs(corr))    # Maximal current absolute correlation
   if (C < eps || len(t)<1){
     break # Early stopping criteria
   }
    
-  if (1 == i){
-    addVar = match(C, abs(c))
+  if (i == 1){
+    addVar = match(C, abs(corr))
   } 
   if (signOK){
     A = c(A,addVar)
@@ -83,65 +83,72 @@ while (nVars < m){
   }
   
   # LOOK AT THIS AGAIN
-  s_A = sign(c(A))
+  # This method of calculating u_A is different to the paper, 
+  # maybe should revert back to paper method - Cian
+  s_A = sign(corr[A])
   Ac = setdiff(1:p,A)    # Inactive set
   nZeros = length(Ac)
-  X_A = X[:,A]
+  X_A = X[,A]
   G_A = t(X_A)*X_A # Gram matrix
   invG_A = solve(G_A)
   L_A = 1/sqrt(t(s_A)%*%invG_A%*%s_A)
-               w_A = L_A%*%invG_A*s_A   # Coefficients of equiangular vector u_A
-               u_A = X_A %*% w_A  # Equiangular vector
-               a = t(X) %*% u_A # Angles between x_j and u_A
-               beta_tmp = matrix(0, p, 1)
-               gammaTest = matrix(0, nZeros, 2)
-               if (nVars == m){
-                 gamma[i] = C/L_A   # Move to the least squares projection
-               }
-               
-               else{
-                 for (j = 1:nZeros){
-                   jj = Ac[j]
-                   gammaTest[j,:] = [(C-c(jj))/(L_A-a(jj)), (C+c(jj))/(L_A+a(jj))]
-                 }
-                 [gamma(i) min_i min_j] = minplus(gammaTest);
-                 addVar = unique(Ac(min_i));
-               }
-                 
-               beta_tmp(A) = t(beta(i,A)) + gamma(i)*w_A;    # Update coefficient estimates
-               # Check the sign feasibility of lasso
-               if lasso,
-               signOK = 1;
-               gammaTest = -beta(i,A)'./w_A;
-               [gamma2 min_i min_j] = minplus(gammaTest);
-               if gamma2 < gamma(i),   % The case when sign consistency gets violated
-               gamma(i) = gamma2;
-               beta_tmp(A) = beta(i,A)' + gamma(i)*w_A;    % Correct the coefficients
-               beta_tmp(A(unique(min_i))) = 0;
-               A(unique(min_i)) = [];  % Delete the zero-crossing variable (keep the ordering)
-               nVars = nVars-1;
-               signOK = 0;
-               end
-               end
-               if (Inf ~= t(1)){
-                 t_now = norm(beta_tmp(A),1)
-               }
-               if (t_prev < t(1) && t_now >= t(1)){
-                 beta_t(ii,A) = beta(i,A) + L_A %*% (t(1)-t_prev) %*% t(w_A)    # Compute coefficient estimates corresponding to a specific t
-                 t(1) = numeric()
-                 ii = ii+1
-                 t_prev = t_now
-               }
-              
-               mu = mu_old + gamma(i) %*% u_A # Update mean vector
-               mu_old = mu
-               beta = [beta; t(beta_tmp) ]
-                       end
-                       
-                       if 1 < ii,
-                       noCons = (tt > norm(beta_tmp,1));
-                       if 0 < sum(noCons),
-                       beta_t(noCons,:) = repmat(beta_tmp',sum(noCons),1);
+  w_A = L_A%*%invG_A*s_A   # Coefficients of equiangular vector u_A
+  u_A = X_A %*% w_A  # Equiangular vector
+  a = t(X) %*% u_A # Angles between x_j and u_A
+  beta_tmp = matrix(0, p, 1)
+  gammaTest = matrix(0, nZeros, 2) # matrix to hold the two possibilities for the minimization to find gamma
+  if (nVars == m){
+   gamma[i] = C/L_A   # Move to the least squares projection
+  }else{
+    for (j in 1:nZeros){
+     jj = Ac[j]
+     gammaTest[j,] = c((C-corr[jj])/(L_A-a[jj]), (C+corr[jj])/(L_A+a[jj]))
+    }
+    gamma[i] = min(gammaTest[gammaTest>0]) # Take the min over only the positive components
+    min_i = which(X==min(X[X>0]),arr.ind = TRUE)[1]
+    min_j = which(X==min(X[X>0]),arr.ind = TRUE)[2] # Not needed?
+    addVar = unique(Ac[min_i]);
+  }
+   
+  beta_tmp[A] = t(beta[i,A]) + gamma[i]*w_A;    # Update coefficient estimates
+  # Check the sign feasibility of lasso
+  if (lasso){
+    signOK = 1
+    gammaTest = -t(beta[i,A])/w_A;
+    gamma2 = min(gammaTest[gammaTest>0]) # Take the min over only the positive components
+    min_i = which(X==min(X[X>0]),arr.ind = TRUE)[1]
+    min_j = which(X==min(X[X>0]),arr.ind = TRUE)[2] # Not needed?
+    if (gamma2 < gamma[i]){ #The case when sign consistency gets violated
+      gamma[i] = gamma2;
+      beta_tmp[A] = t(beta[i,A]) + gamma[i]*w_A;    # Correct the coefficients
+      beta_tmp[A[unique(min_i)]] = 0
+      A[unique(min_i)] = numeric()  # Delete the zero-crossing variable (keep the ordering)
+      nVars = nVars-1
+      signOK = 0
+    }
+  }
+  
+  
+  #### Not done yet from here on - needs fixing (t(.) needs to be renamed)
+  if (Inf ~= t(1)){
+   t_now = norm(beta_tmp(A),1)
+  }
+  if (t_prev < t(1) && t_now >= t(1)){
+   beta_t(ii,A) = beta(i,A) + L_A %*% (t(1)-t_prev) %*% t(w_A)    # Compute coefficient estimates corresponding to a specific t
+   t(1) = numeric()
+   ii = ii+1
+   t_prev = t_now
+  }
+  
+  mu = mu_old + gamma(i) %*% u_A # Update mean vector
+  mu_old = mu
+  beta = [beta; t(beta_tmp) ]
+         end
+         
+         if 1 < ii,
+         noCons = (tt > norm(beta_tmp,1));
+         if 0 < sum(noCons),
+         beta_t(noCons,:) = repmat(beta_tmp',sum(noCons),1);
   end
   beta = beta_t;
   end
