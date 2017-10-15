@@ -9,8 +9,8 @@
 #' @param N maximum number of steps
 #' 
 
-stagewise <- function(X, y, eps, tol=10*eps, N=1000) {
-  
+stagewise <- function(X, y, eps, tol=eps, N=1000) {
+  X <- scale(X) #centre and normalise X
   #X <- rbind(X, rep(1, ncol(X))) #to include an intercept term(?)
   n <- nrow(X) #number of observations
   p <- ncol(X) #number of covariates
@@ -31,9 +31,9 @@ stagewise <- function(X, y, eps, tol=10*eps, N=1000) {
     N <- N[1]
     warning("argument N has length >1: only using first element")
   }
-  if (tol < 10*eps){
-    tol <- 10*eps
-    warning("can't achieve tolerance of same magnitude as step size: setting tol=10*eps")
+  if (tol < eps){
+    tol <- eps
+    warning("can't achieve tolerance lower than step size: setting tol=eps")
   }
   
   #initialise variables:

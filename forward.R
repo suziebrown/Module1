@@ -17,6 +17,7 @@ forward <- function(X, y) {
   B <- matrix(NA, nrow=p, ncol=p+1) #matrix containing beta from each step (in columns)
   M[,1] <- rep(0,n) #initial estimate is all zeroes
   B[,1] <- rep(0,p) #initial coeficients beta is all zeroes
+  mu <- rep(0,n)
   
   if (p>n) { #LSE can't be calculated with >n covariates, return NAs
     warning("model parameters can only be estimated with up to n covariates, returning NA for higher-dimensional models")
