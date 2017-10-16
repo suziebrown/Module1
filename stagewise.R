@@ -41,26 +41,30 @@ stagewise <- function(X, y, eps, tol=eps, N=1000) {
   beta <- rep(0,p) #initial coeficients beta is all zeroes
   M <- mu #matrix containing mu from each step (in columns)
   B <- beta #matrix containing beta from each step (in columns)
+  J <- NA
   count <- 1
 
   #let's go:
-  while (any(abs((y-mu))>tol)){
+  while (any(abs(y-mu)>tol)){
       if (count>N){
-        warning("maximum number of steps reached: consider increasing tol or increasing N")
+        warning("maximum number of steps reached: consider increasing tol or N")
         break
       }
+    
       j <- which.max(abs(t(X) %*% (y-mu))) #index of covariate most correlated to residual
       delta <- eps * sign(sum(X[,j] * (y-mu))) #step size & direction
       beta[j] <- beta[j] + delta
       mu <- mu + delta * X[,j]
+      
       M <- c(M,mu)
       B <- c(B,beta)
+      J <- c(J,j)
       count <- count + 1
   }
   
   M <- matrix(M, nrow=n)
   B <- matrix(B, nrow=p)
   #return some stuff:
-  list(coeffs=B, predicts=M)
+  list(coeffs=B, predicts=M, moved=J)
   
 }
