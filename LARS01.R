@@ -1,8 +1,13 @@
-# Least angle regression (LAR) algorithm
-# Author: Xiaohui Chen (xiaohuic@ece.ubc.ca)
-# Version: 2012-Feb
+#' Least Angle Regression
+#' 
+#' Implements the LARS algorithm (Efron et. al. (2004) Least angle regression. Annals of Statistics.)
+#' 
+#' @param X matrix of predictor variables
+#' @param Y vector of response variables
+#' @param standardize should data be scaled and centred?
+#' 
 
-lars <-function(X, Y, option, t, standardize){
+lars <-function(X, Y, option, t, standardize=T){
 
 # Least Angle Regression (LAR) algorithm.
 # Ref: Efron et. al. (2004) Least angle regression. Annals of Statistics.
@@ -41,8 +46,8 @@ lars <-function(X, Y, option, t, standardize){
 
 eps = 1e-10;    # Effective zero
 
-n <- dim(X)[1]
-p <- dim(X)[2] 
+n <- nrow(X)
+p <- ncol(X)
 if (standardize){
   X = scale(X)
   Y = Y-mean(Y)
