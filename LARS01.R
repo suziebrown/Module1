@@ -216,7 +216,7 @@ while (nVars < m){
       t_now = sqrt(sum(beta_tmp[A]**2))
       if (t_prev < t_vec[1] && t_now >= t_vec[1]){
         beta_t[ii,A] = beta[i,A] + A_A %*% (t_vec[1]-t_prev) %*% t(w_A)    # Compute coefficient estimates corresponding to a specific t
-        t_vec = t_vec[-1]
+        #t_vec = t_vec[-1]
         ii = ii+1
       }
    t_prev = t_now
@@ -236,7 +236,16 @@ Data <- Data[,-1]
 X <- Data[, 1:10]
 Y <- Data[, 11]
 
-results <- lars(X = X, Y = Y, t_vec = c(10,10,10,10,10,10), standardize = T)
+
+t_max = 1000
+t_vector <- 1:t_max
+results_beta <- vector("list", t_max)
+#results_beta = rep(0,10)
+for (t in t_vector){
+  results <- lars(X = X, Y = Y, t_vec = c(t), standardize = T)
+  results_beta[[t]] <- results$beta
+}
+#results <- lars(X = X, Y = Y, t_vec = c(10,20,30,40,50,60), standardize = T)
 
 
 
