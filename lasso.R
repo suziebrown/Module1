@@ -102,9 +102,11 @@ lasso<-function(X,y,t){
     }
   }
   beta_hat1
-  S=1
-  
-  G_E=1
-  
-  
 }
+
+beta_mat<-beta_0
+for (t in 1:30){
+  beta_new<-lasso(X,y,t)
+  beta_mat<-c(beta_mat,beta_new)
+}
+beta_mat
