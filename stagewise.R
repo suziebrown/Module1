@@ -9,13 +9,21 @@
 #' @param N maximum number of steps
 #' 
 
-stagewise <- function(X, y, eps, tol=eps, N=1000) {
-  X <- scale(X) #centre and normalise X
-  #X <- rbind(X, rep(1, ncol(X))) #to include an intercept term(?)
+stagewise <- function(X, y, eps, tol=eps, N=1000, standardise=TRUE, intercept=FALSE) {
+
   n <- nrow(X) #number of observations
   p <- ncol(X) #number of covariates
   
-  #check inputs are sensible:
+  if (intercept){
+    X <- cbind(rep(1,n), X) #include an intercept term (i.e. a constant covariate)
+  }
+  
+  if (standardise){
+    X <- scale(X) #centre and normalise X
+    y <- y - mean(y) #centre y
+  }
+  
+  ##check inputs are sensible:
   if (length(y)!=n){
     stop("number of observations on response not equal to number of observations on predictors")
   }
@@ -36,25 +44,34 @@ stagewise <- function(X, y, eps, tol=eps, N=1000) {
     warning("can't achieve tolerance lower than step size: setting tol=eps")
   }
   
-  #initialise variables:
+  ##initialise variables:
   mu <- rep(0,n) #initial estimate is all zeroes
   beta <- rep(0,p) #initial coeficients beta is all zeroes
   M <- mu #matrix containing mu from each step (in columns)
   B <- beta #matrix containing beta from each step (in columns)
   J <- NA
+  j <- 0
+  delta <-0
   count <- 1
 
-  #let's go:
+  ##let's go:
   while (any(abs(y-mu)>tol)){
       if (count>N){
         warning("maximum number of steps reached: consider increasing tol or N")
         break
       }
+      j.old <- j
+      delta.old <- delta
     
       j <- which.max(abs(t(X) %*% (y-mu))) #index of covariate most correlated to residual
       delta <- eps * sign(sum(X[,j] * (y-mu))) #step size & direction
       beta[j] <- beta[j] + delta
       mu <- mu + delta * X[,j]
+      
+      ## stop beta oscillating once converged:
+      if (j.old == j && delta.old!=delta){
+        break
+      }
       
       M <- c(M,mu)
       B <- c(B,beta)
@@ -65,6 +82,6 @@ stagewise <- function(X, y, eps, tol=eps, N=1000) {
   M <- matrix(M, nrow=n)
   B <- matrix(B, nrow=p)
   #return some stuff:
-  list(coeffs=B, predicts=M, moved=J)
+  list(beta=B, mu=M, j=J, method="Stagewise")
   
 }

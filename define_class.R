@@ -1,0 +1,1 @@
+setClass("lars", slots=list(beta="matrix",mu="matrix",j="integer",method="character"))

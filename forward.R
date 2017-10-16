@@ -6,8 +6,11 @@
 #' @param y vector of response variables
 #' 
 
-forward <- function(X, y) {
-  X <- scale(X)
+forward <- function(X, y, standardise=T) {
+  if (standardise){
+    X <- scale(X)
+    y <- y - mean(y)
+  }
   n <- nrow(X) #number of observations
   p <- ncol(X) #number of covariates
   if (length(y)!=n){stop("number of observations on response not equal to number of observations on predictors")}
@@ -19,6 +22,7 @@ forward <- function(X, y) {
   M[,1] <- rep(0,n) #initial estimate is all zeroes
   B[,1] <- rep(0,p) #initial coeficients beta is all zeroes
   mu <- rep(0,n)
+  J <- NA
   
   if (p>n) { #LSE can't be calculated with >n covariates, return NAs
     warning("model parameters can only be estimated with up to n covariates, returning NA for higher-dimensional models")
@@ -41,6 +45,7 @@ forward <- function(X, y) {
     mu <- X %*% beta
     M[,i] <- mu 
     B[,i] <- beta
+    J <- c(J,j)
   }
-  list(coeffs=B, predicts=M)
+  list(beta=B, mu=M, j=J, method="Forward")
 }
