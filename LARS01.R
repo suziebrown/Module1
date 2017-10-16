@@ -44,7 +44,8 @@ lars <-function(X, Y, option, t, standardize=T){
 
 # if strcmpi(option, 'lasso'), lasso = 1; else, lasso = 0; end
 
-eps = 1e-10;    # Effective zero
+eps = 1e-10    # Effective zero
+lasso = F
 
 n <- nrow(X)
 p <- ncol(X)
@@ -59,7 +60,7 @@ T = length(t);
 beta = matrix(0, 1, p)
 mu = matrix(0, n, 1)    # Mean vector
 gamma = numeric() # LARS step lengths
-A = numeric()
+A = c()
 Ac = 1:p
 nVars = 0
 signOK = 1
@@ -68,14 +69,14 @@ mu_old = matrix(0, n, 1)
 t_prev = 0
 beta_t = matrix(0, T, p)
 ii = 1
-tt = t
+tt = t_vec
 
 # LARS loop
 while (nVars < m){
   i = i+1
-  corr = t(X)*(Y-mu)  # Current correlation
+  corr = t(X)%*%(Y-mu)  # Current correlation
   C = max(abs(corr))    # Maximal current absolute correlation
-  if (C < eps || len(t)<1){
+  if (C < eps || length(t)<1){
     break # Early stopping criteria
   }
    
@@ -87,47 +88,71 @@ while (nVars < m){
     nVars = nVars+1 # Add one variable to active set
   }
   
-  # LOOK AT THIS AGAIN
-  # This method of calculating u_A is different to the paper, 
-  # maybe should revert back to paper method - Cian
+  ###############################################################
+  # New version
+  ###############################################################
   s_A = sign(corr[A])
+  Ones_A = rep(1, length(A))
   Ac = setdiff(1:p,A)    # Inactive set
   nZeros = length(Ac)
-  X_A = X[,A]
-  G_A = t(X_A)*X_A # Gram matrix
+  ####
+  # Double check this entry
+  ###
+  X_A = t(t(X[,A]) * s_A)
+  
+  G_A = t(X_A) %*% X_A # Gram matrix
   invG_A = solve(G_A)
-  L_A = 1/sqrt(t(s_A)%*%invG_A%*%s_A)
-  w_A = L_A%*%invG_A*s_A   # Coefficients of equiangular vector u_A
+  A_A = 1/sqrt(t(Ones_A) %*% invG_A %*% Ones_A)
+  w_A = A_A[1] * invG_A %*% Ones_A  # Coefficients of equiangular vector u_A
   u_A = X_A %*% w_A  # Equiangular vector
   a = t(X) %*% u_A # Angles between x_j and u_A
   beta_tmp = matrix(0, p, 1)
   gammaTest = matrix(0, nZeros, 2) # matrix to hold the two possibilities for the minimization to find gamma
+  
+  ###############################################################
+  
+  # LOOK AT THIS AGAIN
+  # This method of calculating u_A is different to the paper, 
+  # maybe should revert back to paper method - Cian
+  #s_A = sign(corr[A])
+  #Ac = setdiff(1:p,A)    # Inactive set
+  #nZeros = length(Ac)
+  #X_A = X[,A] 
+  #G_A = t(X_A)*X_A # Gram matrix
+  #invG_A = solve(G_A)
+  #L_A = 1/sqrt(t(s_A)%*%invG_A%*%s_A)
+  #w_A = L_A%*%invG_A*s_A   # Coefficients of equiangular vector u_A
+  #u_A = X_A %*% w_A  # Equiangular vector
+  #a = t(X) %*% u_A # Angles between x_j and u_A
+  #beta_tmp = matrix(0, p, 1)
+  #gammaTest = matrix(0, nZeros, 2) # matrix to hold the two possibilities for the minimization to find gamma
+  ###################################################################################################
+  ###################################################################################################
   if (nVars == m){
-   gamma[i] = C/L_A   # Move to the least squares projection
-  }else{
+   gamma[i] = C/A_A   # Move to the least squares projection
+  }
+  else{
     for (j in 1:nZeros){
      jj = Ac[j]
-     gammaTest[j,] = c((C-corr[jj])/(L_A-a[jj]), (C+corr[jj])/(L_A+a[jj]))
+     gammaTest[j,] = c((C-corr[jj])/(A_A-a[jj]), (C+corr[jj])/(A_A+a[jj]))
     }
     gamma[i] = min(gammaTest[gammaTest>0]) # Take the min over only the positive components
-    min_i = which(X==min(X[X>0]),arr.ind = TRUE)[1]
-    min_j = which(X==min(X[X>0]),arr.ind = TRUE)[2] # Not needed?
-    addVar = unique(Ac[min_i]);
+    min_j = which(gammaTest==min(gammaTest[gammaTest>0]),arr.ind = TRUE)[1]
+    addVar = unique(Ac[min_j]);
   }
    
-  beta_tmp[A] = t(beta[i,A]) + gamma[i]*w_A;    # Update coefficient estimates
+  beta_tmp[A] = beta[i,A] + gamma[i]*w_A;    # Update coefficient estimates
   # Check the sign feasibility of lasso
   if (lasso){
     signOK = 1
     gammaTest = -t(beta[i,A])/w_A;
     gamma2 = min(gammaTest[gammaTest>0]) # Take the min over only the positive components
-    min_i = which(X==min(X[X>0]),arr.ind = TRUE)[1]
-    min_j = which(X==min(X[X>0]),arr.ind = TRUE)[2] # Not needed?
+    min_j = which(gammaTest==min(gammaTest[gammaTest>0]),arr.ind = TRUE)[1]
     if (gamma2 < gamma[i]){ #The case when sign consistency gets violated
       gamma[i] = gamma2;
       beta_tmp[A] = t(beta[i,A]) + gamma[i]*w_A;    # Correct the coefficients
-      beta_tmp[A[unique(min_i)]] = 0
-      A[unique(min_i)] = numeric()  # Delete the zero-crossing variable (keep the ordering)
+      beta_tmp[A[unique(min_j)]] = 0
+      A[unique(min_j)] = numeric()  # Delete the zero-crossing variable (keep the ordering)
       nVars = nVars-1
       signOK = 0
     }
@@ -135,48 +160,62 @@ while (nVars < m){
   
   
   #### Not done yet from here on - needs fixing (t(.) needs to be renamed)
-  if (Inf ~= t(1)){
-   t_now = norm(beta_tmp(A),1)
-  }
-  if (t_prev < t(1) && t_now >= t(1)){
-   beta_t(ii,A) = beta(i,A) + L_A %*% (t(1)-t_prev) %*% t(w_A)    # Compute coefficient estimates corresponding to a specific t
-   t(1) = numeric()
-   ii = ii+1
+  if (Inf != t_vec[1]){
+      t_now = sqrt(sum(beta_tmp[A]**2)) #norm(beta_tmp(A),1)
+      if (t_prev < t_vec[1] && t_now >= t_vec[1]){
+        beta_t[ii,A] = beta[i,A] + A_A %*% (t_vec[1]-t_prev) %*% t(w_A)    # Compute coefficient estimates corresponding to a specific t
+        t_vec = t_vec[-1]
+        ii = ii+1
+      }
    t_prev = t_now
   }
-  
-  mu = mu_old + gamma(i) %*% u_A # Update mean vector
+  mu = mu_old + gamma[i] * u_A # Update mean vector
   mu_old = mu
-  beta = [beta; t(beta_tmp) ]
-         end
-         
-         if 1 < ii,
-         noCons = (tt > norm(beta_tmp,1));
-         if 0 < sum(noCons),
-         beta_t(noCons,:) = repmat(beta_tmp',sum(noCons),1);
-  end
-  beta = beta_t;
-  end
+  beta = rbind(beta, t(beta_tmp))  
 }
 
-% Normalize columns of X to have mean zero and length one.
-function sX = normalize(X)
-
-[n,p] = size(X);
-sX = X-repmat(mean(X),n,1);
-sX = sX*diag(1./sqrt(ones(1,n)*sX.^2));
 
 
-% Find the minimum and its index over the (strictly) positive part of X
-% matrix
-function [m, I, J] = minplus(X)
+# if (1 < ii){
+#   noCons = (tt > norm(beta_tmp,1))
+#   if (0 < sum(noCons)){
+#     ########################################################################
+#     # Check repmat function
+#     ########################################################################
+#     beta_t(noCons, ) = repmat(t(beta_tmp),sum(noCons),1)
+#   }
+#   beta = beta_t
+# }
 
-% Remove complex elements and reset to Inf
-[I,J] = find(0~=imag(X));
-for i = 1:length(I),
-X(I(i),J(i)) = Inf;
-end
+}
 
-X(X<=0) = Inf;
-m = min(min(X));
-[I,J] = find(X==m);
+# Normalize columns of X to have mean zero and length one.
+#sX_f <-  function (X){
+#  return(scale(X))
+#}
+
+#n = dim(X)[1]
+#p = dim(X)[2]
+
+#sX = X-repmat(mean(X),n,1);
+#sX = sX*diag(1./sqrt(ones(1,n)*sX.^2));
+
+#sX <- sX_f(X)
+
+############################################################
+# Check the Minplus function
+############################################################
+
+# Find the minimum and its index over the (strictly) positive part of X
+# matrix
+#function [m, I, J] = minplus(X)
+
+# Remove complex elements and reset to Inf
+#[I,J] = find(0~=imag(X));
+#for i = 1:length(I),
+#  X(I(i),J(i)) = Inf;
+#end
+
+#X(X<=0) = Inf;
+#m = min(min(X));
+#[I,J] = find(X==m);
