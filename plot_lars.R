@@ -2,6 +2,7 @@
 #' 
 #' Plot method for output from LARS algorithm
 #' 
+#' @param x an object of class "lars"
 #' 
 
 plot.lars <- function(x, ...) {
