@@ -14,6 +14,8 @@ n <- 14
 p <- 9
 X <- matrix(rnorm(n*p),nrow=n) #generate some data
 y <- X %*% runif(p,-10,10) #generate some y's correlated to X's
+y <- X %*% runif(p,-5,5) #generate some y's correlated to X's
+
 
 
 # Define function to convert binary vectors to decimal
@@ -23,11 +25,10 @@ BinToDec <- function(x){
 }
 
 
-lasso<-function(X,y,t){
+lasso<-function(X,y,t1){
   n <- nrow(X) #number of observations
   p <- ncol(X) #number of covariates
   if (length(y)!=n){stop("number of observations on response not equal to number of observations on predictors")}
-  ind <- 1:p
   beta_0<-rep(0,p) # Starting beta for numerical procedures
   
   M <- matrix(NA, nrow=n, ncol=p+1) #matrix containing mu from each step (in columns)
@@ -43,16 +44,16 @@ lasso<-function(X,y,t){
   # To do this we need the overall least squares estimate
   # If n>p we can do this explicitly
   # For n<=p we minimize the rss numerically to find a starting value of beta_hat
+  # Calculate the rss and it's derivative for use later
+  rss<-function(beta) t(y-X%*%beta)%*%(y-X%*%beta)
+  # Also calculate derivative of rss
+  rss_deriv<-function(beta) -2*t(X)%*%(y-X%*%beta)
   
   if (n>p){
     # Explicit least-squares solution
     beta_hat<-solve(t(X)%*%X)%*%(t(X) %*% y)
   }else{
     # X'X is not invertable, so use numerical minimization
-    
-    rss<-function(beta) t(y-X%*%beta)%*%(y-X%*%beta)
-    # Also calculate derivative of rss
-    rss_deriv<-function(beta) -2*t(X)%*%(y-X%*%beta)
     beta_hat<-nlm(rss,beta_0)$estimate
   }
   
@@ -61,35 +62,38 @@ lasso<-function(X,y,t){
   delta=sign(beta_hat)
   
   i_0<-BinToDec(delta)
-
+  # Determine the starting set E
   E=c(i_0)
   # Need to find the size of E to determine the dimension of the constraint vector
   m<-length(E)
-  
+  # Calculate the inequality constraint matrix
   G_E<-t(matrix(delta))
+  # Inputs for the constrained optimization function have a slightly different form 
   ui<- -G_E
-  ci<-rep(-t,m)
+  ci<-rep(-t1,m)
   
-  beta_hat1<-constrOptim(beta_0,rss,rss_deriv,ui,ci)$par
+  beta_hat1<-constrOptim(beta_0,rss,rss_deriv,ui,ci,outer.iterations = 200, outer.eps = 1e-10)$par
+ 
   N<-100
   count=1
-  while(sum(abs(beta_hat1))>t){
+  while(sum(abs(beta_hat1))>t1){
     if (count>N){
       warning("maximum number of steps reached: consider increasing tol or N")
       break
     }
     delta_new=sign(beta_hat1)
-    
+
     i<-BinToDec(delta_new)
     E<-c(E,i)
+    m<-length(E)
     G_E<-rbind(G_E,delta_new)
-    
+
     ui<- -G_E
-    ci<-rep(-t,m)
-    
-    beta_hat1<-constrOptim(beta_0,rss,NULL,ui,ci)$par
+    ci<-rep(-t1,m)
+
+    beta_hat1<-constrOptim(beta_0,rss,rss_deriv,ui,ci)$par
     for (j in 1:p){
-      if (abs(beta_hat1[j])<1e-5){
+      if (abs(beta_hat1[j])<1e-3){
         beta_hat1[j]=0
       }
     }
@@ -97,16 +101,18 @@ lasso<-function(X,y,t){
   }
 
   for (j in 1:p){
-    if (abs(beta_hat1[j])<1e-4){
+    if (abs(beta_hat1[j])<1e-3){
       beta_hat1[j]=0
     }
   }
   beta_hat1
 }
 
+
 beta_mat<-beta_0
-for (t in 1:30){
-  beta_new<-lasso(X,y,t)
-  beta_mat<-c(beta_mat,beta_new)
+for (t1 in c(0.1,0.2,0.5,1,2,5,10,20,30)){
+  beta_new<-lasso(X,y,t1)
+  beta_mat<-cbind(beta_mat,beta_new)
 }
+beta_mat<-matrix(beta_mat,9,10)
 beta_mat
