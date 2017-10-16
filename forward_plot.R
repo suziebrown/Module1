@@ -21,7 +21,7 @@ for (i in 1:p) {
 legend("topright",legend=1:p,col=1:p,lty=1, pch=16)
 
 ##plot of AIC/MSE over time:
-aic <- 2*(0:(ncol(B)-1)) + apply(M,2,function(x){sum((x-y)^2)})
+aic <- 2*(0:(ncol(B)-1)) + apply(M,2,function(x){n*log(sum((x-y)^2))})
 plot(aic, xlim=c(1,ncol(B)+1),ylim=range(aic)+c(-0.5,0.5), type='l',lwd=2, col=2, main='AIC after each step', xlab='steps',ylab="AIC")
 #MSE <- apply(M,2,function(x){mean((x-y)^2)})
 #lines(MSE, type='l',lwd=2, col=4)

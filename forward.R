@@ -7,6 +7,7 @@
 #' 
 
 forward <- function(X, y) {
+  X <- scale(X)
   n <- nrow(X) #number of observations
   p <- ncol(X) #number of covariates
   if (length(y)!=n){stop("number of observations on response not equal to number of observations on predictors")}
