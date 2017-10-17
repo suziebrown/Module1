@@ -47,5 +47,8 @@ forward <- function(X, y, standardise=T) {
     B[,i] <- beta
     J <- c(J,j)
   }
-  list(beta=B, mu=M, j=J, method="Forward")
+  
+  out <- list(beta=B, mu=M, j=J, method="Forward")
+  class(out) <- "lars"
+  out
 }

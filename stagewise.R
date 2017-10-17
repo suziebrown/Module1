@@ -14,10 +14,10 @@ stagewise <- function(X, y, eps, tol=eps, N=1000, standardise=TRUE, intercept=FA
   n <- nrow(X) #number of observations
   p <- ncol(X) #number of covariates
   
+  ## Edit the data according to options
   if (intercept){
     X <- cbind(rep(1,n), X) #include an intercept term (i.e. a constant covariate)
   }
-  
   if (standardise){
     X <- scale(X) #centre and normalise X
     y <- y - mean(y) #centre y
@@ -81,7 +81,10 @@ stagewise <- function(X, y, eps, tol=eps, N=1000, standardise=TRUE, intercept=FA
   
   M <- matrix(M, nrow=n)
   B <- matrix(B, nrow=p)
+  
   #return some stuff:
-  list(beta=B, mu=M, j=J, method="Stagewise")
+  out <- list(beta=B, mu=M, j=J, method="Stagewise")
+  class(out) <- "lars"
+  out
   
 }
