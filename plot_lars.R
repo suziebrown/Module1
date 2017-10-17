@@ -9,6 +9,7 @@ plot.lars <- function(x, ...) {
   B <- x$beta
   method <- x$method
   t <- x$t
+  p <- nrow(B)
   
   plot(NA, cex=0.8, xlim=range(t),ylim=range(B), ylab='betas', xlab='t', main=sprintf("Evolution of betas in %s", method), ...) 
   for (i in 1:p) {
