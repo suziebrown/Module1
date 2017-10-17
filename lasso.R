@@ -115,7 +115,7 @@ lasso_wrap<-function(X,y,t1_range,beta_0){
     beta_new<-lasso(X,y,t1)
     beta_mat<-cbind(beta_mat,beta_new)
   }
-  beta_mat<-matrix(beta_mat,9,length(t1_range)+1)
+  beta_mat<-matrix(beta_mat,10,length(t1_range)+1)
   output<-list(beta=beta_mat, mu=NA, j=NA, method="Lasso")
   
   output
@@ -125,7 +125,16 @@ lasso_wrap<-function(X,y,t1_range,beta_0){
 
 
 
-output<-lasso_wrap(X,y,1:40,beta_0)
+output<-lasso_wrap(X,y,seq(from=1,to=4000,by=100),beta_0)
 class(output)<-"lars"
 plot(output)
 
+
+diabetes<-read.csv("diabetes.csv")
+dim(diabetes)
+head(diabetes)
+X<-as.matrix(diabetes[,2:11])
+y<-diabetes[,12]
+head(X)
+head(y)
+length(y)
