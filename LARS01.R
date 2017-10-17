@@ -38,7 +38,7 @@ lars <-function(X, y, option="lars", t_vec, standardise=T){
 eps = 1e-10    # Effective zero
 
 # Still need to work in the Lasso, currently set to LARS
-lasso = F
+lasso = (option=='lasso')
 
 n <- nrow(X)
 p <- ncol(X)
@@ -166,16 +166,16 @@ while (nVars < m){
   # If we are using all the covaraites
   if (nVars == m){
    gamma[i] = C/A_A   # Move to the least squares projection
-  }
-  else{
+  }else{
     for (j in 1:nZeros){
-     jj = Ac[j]
-     
-     # Computing gamma for the LARS step
-     gammaTest[j,] = c((C-corr[jj])/(A_A-a[jj]), (C+corr[jj])/(A_A+a[jj]))
+      jj = Ac[j]
+      
+      # Computing gamma for the LARS step
+      gammaTest[j,] = c((C-corr[jj])/(A_A-a[jj]), (C+corr[jj])/(A_A+a[jj]))
     }
     
     # Take the min over only the positive components
+    
     gamma[i] = min(gammaTest[gammaTest>0]) 
     min_j = which(gammaTest==min(gammaTest[gammaTest>0]),arr.ind = TRUE)[1]
     
@@ -189,14 +189,22 @@ while (nVars < m){
   # Check the sign feasibility of lasso
   if (lasso){
     signOK = 1
-    gammaTest = -t(beta[i,A])/w_A
-    gamma2 = min(gammaTest[gammaTest>0]) # Take the min over only the positive components
-    min_j = which(gammaTest==min(gammaTest[gammaTest>0]),arr.ind = TRUE)[1]
+    # Define the vector d to check for sign changes
+    d_A<-s_A*w_A
+    gammaTest = -t(beta[i,A])/d_A
+
+    # Look for the first sign change, returning Inf if there are no postive components
+    if (all(gammaTest<=0)){
+      gamma2<- Inf 
+    }else{
+      gamma2 = min(gammaTest[gammaTest>0]) # Take the min over only the positive components
+      min_j = which(gammaTest==min(gammaTest[gammaTest>0]),arr.ind = TRUE)[2]
+    }
     if (gamma2 < gamma[i]){ #The case when sign consistency gets violated
       gamma[i] = gamma2
-      beta_tmp[A] = t(beta[i,A]) + gamma[i]*w_A    # Correct the coefficients
+      beta_tmp[A] = t(beta[i,A]) + gamma[i]*d_A    # Correct the coefficients
       beta_tmp[A[unique(min_j)]] = 0
-      A[unique(min_j)] = numeric()  # Delete the zero-crossing variable (keep the ordering)
+      A = A[-unique(min_j)]  # Delete the zero-crossing variable (keep the ordering)
       nVars = nVars-1
       signOK = 0
     }
@@ -243,6 +251,7 @@ y <- Data[, 11]
 
 results <- lars(X = X, y = y, t_vec = c(10,20,30,40,50,60), standardise = T)
 
+results <- lars(X = X, y = y, option='lasso', t_vec = c(10,20,30,40,50,60), standardise = T)
 
 
 betas <- results

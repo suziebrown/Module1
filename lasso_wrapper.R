@@ -12,7 +12,7 @@
 #' @param intercept option to add an intercept term to the covariate matrix
 #' 
 
-lasso_wrap<-function(X, y, t1_range, eps=1e-3, N=100, standardise=TRUE, intercept=FALSE){
+lasso<-function(X, y, t1_range, eps=1e-3, N=100, standardise=TRUE, intercept=FALSE){
   p <- ncol(X) #number of covariates
   # Initialize matrices for the betas and the L1 norm t
   beta_mat<-rep(0,p)

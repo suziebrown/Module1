@@ -1,6 +1,6 @@
-#' Lasso
+#' Lasso step
 #' 
-#' Implements the Lasso algorithm
+#' Implements the Lasso algorithm for a specific t
 #' 
 #' @param X matrix of predictor variables
 #' @param y vector of response variables
@@ -11,7 +11,7 @@
 #' @param intercept option to add an intercept term to the covariate matrix
 #' 
 
-lasso<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALSE){
+lasso_step<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALSE){
   n <- nrow(X) #number of observations
   p <- ncol(X) #number of covariates
   
