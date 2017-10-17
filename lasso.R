@@ -4,49 +4,54 @@
 #' 
 #' @param X matrix of predictor variables
 #' @param y vector of response variables
-#' @param t shrinkage parameter
+#' @param t1 shrinkage parameter
+#' @param eps cutoff for determining when a variable is identically 0
+#' @param N maximum number of steps for numerical procedure
+#' @param standardise option to centre and normalise the covariate matrix X
+#' @param intercept option to add an intercept term to the covariate matrix
 #' 
-set.seed(163)
-X<-matrix(rnorm(100,mean=1),20,5)
-y=X[,1]+2*X[,2]+3*X[,3]+4*X[,4]+5*X[,5]+rnorm(20)
 
-n <- 14
-p <- 9
-X <- matrix(rnorm(n*p),nrow=n) #generate some data
-y <- X %*% runif(p,-10,10) #generate some y's correlated to X's
-y <- X %*% runif(p,-5,5) #generate some y's correlated to X's
-
-
-
-# Define function to convert binary vectors to decimal
-
-BinToDec <- function(x){
-  sum(2^(which(rev(unlist(strsplit(as.character(x), "")) == 1))-1))
-}
-
-
-lasso<-function(X,y,t1){
+lasso<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALSE){
   n <- nrow(X) #number of observations
   p <- ncol(X) #number of covariates
-  if (length(y)!=n){stop("number of observations on response not equal to number of observations on predictors")}
-  beta_0<-rep(0,p) # Starting beta for numerical procedures
   
-  M <- matrix(NA, nrow=n, ncol=p+1) #matrix containing mu from each step (in columns)
-  B <- matrix(NA, nrow=p, ncol=p+1) #matrix containing beta from each step (in columns)
-  M[,1] <- rep(0,n) #initial estimate is all zeroes
-  B[,1] <- rep(0,p) #initial coeficients beta is all zeroes
-  mu <- rep(0,n)
-
+  ## Edit the data according to options
+  if (intercept){
+    X <- cbind(rep(1,n), X) #include an intercept term (i.e. a constant covariate)
+  }
+  if (standardise){
+    X <- scale(X) #centre and normalise X
+    y <- y - mean(y) #centre y
+  }
+  
+  ##check inputs are sensible:
+  if (length(y)!=n){
+    stop("number of observations on response not equal to number of observations on predictors")
+  }
+  if (length(eps) > 1){
+    eps <- eps[1]
+    warning("argument eps has length >1: only using first element")
+  }
+  if (length(N) > 1){
+    N <- N[1]
+    warning("argument N has length >1: only using first element")
+  }
+  
   # We use the algorithm detailed in Tibshirani 1994 
   # That uses the Kuhn-Tucker conditions to sequentially find feasible solutions
   
-  # First define delta
+  # First define the starting beta for numerical optimizers
+  beta_0<-rep(0,p) 
+  
+  # Start algorithm by defining delta
   # To do this we need the overall least squares estimate
   # If n>p we can do this explicitly
   # For n<=p we minimize the rss numerically to find a starting value of beta_hat
-  # Calculate the rss and it's derivative for use later
+  
+  # Calculate the residual sum of squares and it's derivative for use later
+  
   rss<-function(beta) t(y-X%*%beta)%*%(y-X%*%beta)
-  # Also calculate derivative of rss
+
   rss_deriv<-function(beta) -2*t(X)%*%(y-X%*%beta)
   
   if (n>p){
@@ -60,40 +65,39 @@ lasso<-function(X,y,t1){
   # Using this beta_hat we start the algorithm using the K-T conditions
   
   delta=sign(beta_hat)
-  
-  i_0<-BinToDec(delta)
-  # Determine the starting set E
-  E=c(i_0)
-  # Need to find the size of E to determine the dimension of the constraint vector
-  m<-length(E)
+
+  # Determine the size of the starting set E
+  mod_E=1
   # Calculate the inequality constraint matrix
   G_E<-t(matrix(delta))
   # Inputs for the constrained optimization function have a slightly different form 
   ui<- -G_E
-  ci<-rep(-t1,m)
-  
+  ci<-rep(-t1,mod_E)
+  # Perform a constrained minimization step to attempt to find solution satisfying the lasso constraints
   beta_hat1<-constrOptim(beta_0,rss,rss_deriv,ui,ci,outer.iterations = 200, outer.eps = 1e-10)$par
- 
-  N<-100
+
+  # Now start the algorithm to find the constrained solution
   count=1
   while(sum(abs(beta_hat1))>t1){
+    # Safety in case the algorthim takes a long time to converge 
+    # (guaranteed to converge within 2^p steps, but p could be large)
     if (count>N){
       warning("maximum number of steps reached: consider increasing tol or N")
       break
     }
+    # As before calculate delta, then update E and G_E
     delta_new=sign(beta_hat1)
-
-    i<-BinToDec(delta_new)
-    E<-c(E,i)
-    m<-length(E)
+    mod_E<-mod_E+1
     G_E<-rbind(G_E,delta_new)
-
+    # Get constraints in the correct form for constrOptim
     ui<- -G_E
-    ci<-rep(-t1,m)
+    ci<-rep(-t1,mod_E)
 
     beta_hat1<-constrOptim(beta_0,rss,rss_deriv,ui,ci)$par
+    # The numerical procedures will never shrink coefficients to exactly 0
+    # If the absolute value is less than our chosen epsilon we say that is is identically 0
     for (j in 1:p){
-      if (abs(beta_hat1[j])<0.1){
+      if (abs(beta_hat1[j])<eps){
         beta_hat1[j]=0
       }
     }
@@ -101,44 +105,11 @@ lasso<-function(X,y,t1){
   }
 
   for (j in 1:p){
-    if (abs(beta_hat1[j])<1e-3){
+    if (abs(beta_hat1[j])<eps){
       beta_hat1[j]=0
     }
   }
+  # Output the value of beta that solves the constrained minimization problem
   beta_hat1
 }
 
-
-lasso_wrap<-function(X,y,t1_range,beta_start){
-  beta_mat<-beta_start
-  t_start<-0
-  t_vec<-t_start
-  for (t1 in t1_range){
-    beta_new<-lasso(X,y,t1)
-    beta_mat<-cbind(beta_mat,beta_new)
-    t_vec<-c(t_vec,sum(abs(beta_new)))
-  }
-  beta_mat<-matrix(beta_mat,10,length(t1_range)+1)
-  
-  output<-list(beta=beta_mat, mu=NA, t=t_vec, j=NA, method="Lasso")
-  
-  output
-}
-
-
-
-
-
-output<-lasso_wrap(X,y,seq(from=1,to=4000,by=100),rep(0,10))
-class(output)<-"lars"
-plot(output)
-
-
-diabetes<-read.csv("diabetes.csv")
-dim(diabetes)
-head(diabetes)
-X<-as.matrix(diabetes[,2:11])
-y<-diabetes[,12]
-head(X)
-head(y)
-length(y)
