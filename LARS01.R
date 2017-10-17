@@ -245,9 +245,12 @@ for (t in t_vector){
   results <- lars(X = X, Y = Y, t_vec = c(t), standardize = T)
   results_beta[[t]] <- results$beta
 }
-#results <- lars(X = X, Y = Y, t_vec = c(10,20,30,40,50,60), standardize = T)
+results <- lars(X = X, Y = Y, t_vec = c(10,20,30,40,50,60), standardize = T, method = "LARS")
 
 
+betas <- t(results)
+class(betas) <- "lars"
+plot(betas)
 
 ##############################################################################
 # MAYBE GO OVER THIS TOGETHER CAN T FIGURE OUT WHAT IS BEING DONE HERE

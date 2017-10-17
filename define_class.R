@@ -1,1 +1,1 @@
-setClass("lars", slots=list(beta="matrix",mu="matrix",j="integer",method="character"))
+setClass("lars", slots=list(beta="matrix",mu="matrix",t="numeric" ,j="integer",method="character"))
