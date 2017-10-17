@@ -233,6 +233,10 @@ list(beta = t(beta), J = A, mu = mu, C = C, c = c, gamma = gamma, t = colSums(ab
 
 
 
+
+
+
+
 Data <- read.csv(file="diabetes.csv", header=TRUE, sep=",")
 Data <- Data[,-1]
 X <- Data[, 1:10]
@@ -257,7 +261,7 @@ results <- lars(X = X, y = y, option='lasso', t_vec = c(10,20,30,40,50,60), stan
 results$t
 betas <- results
 class(betas) <- "lars"
-print(betas)
+plot(betas)
 
 ##############################################################################
 # MAYBE GO OVER THIS TOGETHER CAN T FIGURE OUT WHAT IS BEING DONE HERE

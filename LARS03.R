@@ -125,3 +125,63 @@ lars <-function(X, y, option="lars", standardise=TRUE, intercept=FALSE){
   class(out) <- "lars"
   out
 }
+
+#' @param X matrix of predictor variables
+#' @param y vector of response variables
+#' @param split_prop proportion to be split into training/test
+#' @param n_iterations number random validation procedures
+#' @param standardise should data be scaled and centred?
+#' 
+
+Cross_Validation_LARS <- function(X, y, split_prop, n_iterations, standardise){
+  mean_active_set_size = 0
+  error_test = c()
+  for (i in 1:n_iterations){
+    train_index <- sample(1:length(y),length(y)*split_prop)
+    test_index <- setdiff(1:length(y), train_index)
+    
+    train2_index <- sample(train_index, length(train_index)*split_prop)
+    val_index <- setdiff(train_index, train2_index)
+    
+    X_train2 <- X[train2_index,]
+    y_train2 <- y[train2_index]
+    
+    X_val <- X[val_index,]
+    y_val <- y[val_index]
+    
+    X_test <- X[test_index,]
+    y_test <- y[test_index]
+    
+    results <- lars(X_train2, y_train2, option="lars", standardise=standardise)
+    betas <- results$beta
+    predictions_val <- as.matrix(X_val) %*% betas
+    
+    error_val <- colSums((predictions_val-y_val)**2) + results$t
+    
+    plot(error_val)
+    # e <- e + error_val/100 
+    
+    index_up_to <- which(min(error_val) == error_val)
+    mean_active_set_size <- mean_active_set_size + index_up_to/n_iterations
+    Active_set <- results$J
+    
+    betas_test <- betas[,index_up_to]
+    predictions_test <- as.matrix(X_test) %*% betas_test
+    # Inactive <- setdiff(1:length(results$t), Active_set[1:index_up_to])
+    error_test <- cbind(error_test, colSums((predictions_test-y_test)**2)) #+ results$t[index_up_to])
+  }
+  
+  return(list(mean_error_test = mean(error_test), mean_active_set_size = mean_active_set_size) )
+}
+
+
+Data <- read.csv(file="diabetes.csv", header=TRUE, sep=",")
+Data <- Data[,-1]
+X <- Data[, 1:10]
+y <- Data[, 11]
+X <- scale(X)
+y <- y-mean(y)
+
+res <- Cross_Validation_LARS(X, y, 0.9, 50, T)
+res$mean_active_set_size
+res$mean_error_test

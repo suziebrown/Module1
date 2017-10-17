@@ -177,17 +177,17 @@ lars <-function(X, y, option="lars", t_vec, standardise=T){
     }
     
     
-    # Need to reread this works for t as 1-D vector not sure how it is supposed to work in more than 1
-    #print(t_vec[1])
-    if (Inf != t_vec[1]){
-      t_now = sum(abs(beta_tmp[A]))
-      if (t_prev < t_vec[1] && t_now >= t_vec[1]){
-        beta_t[ii,A] = beta[i,A] + A_A %*% (t_vec[1]-t_prev) %*% t(w_A)    # Compute coefficient estimates corresponding to a specific t
-        t_vec = t_vec[-1]
-        ii = ii+1
-      }
-      t_prev = t_now
-    }
+    # # Need to reread this works for t as 1-D vector not sure how it is supposed to work in more than 1
+    # #print(t_vec[1])
+    # if (Inf != t_vec[1]){
+    #   t_now = sum(abs(beta_tmp[A]))
+    #   if (t_prev < t_vec[1] && t_now >= t_vec[1]){
+    #     beta_t[ii,A] = beta[i,A] + A_A %*% (t_vec[1]-t_prev) %*% t(w_A)    # Compute coefficient estimates corresponding to a specific t
+    #     #t_vec = t_vec[-1]
+    #     ii = ii+1
+    #   }
+    #   t_prev = t_now
+    # }
     
     mu = mu_old + gamma[i] * u_A # Update mean vector
     mu_old = mu
@@ -203,9 +203,9 @@ Data <- Data[,-1]
 X <- Data[, 1:10]
 y <- Data[, 11]
 e <- rep(0, 11)
-error_test = c()
-X <- scale(X)
+#X <- scale(X)
 y <- y-mean(y)
+
 
  # library(MASS)
  # data('Boston')
@@ -215,44 +215,58 @@ y <- y-mean(y)
  # X <- scale(X)
  # y <- y-mean(y)
 
-for (i in 1:100){
-  train_index <- sample(1:length(y),length(y)*0.9)
-  test_index <- setdiff(1:length(y), train_index)
+
+
+Cross_Validation_LARS <- function(X, y, split_prop, n_iterations, standardise){
+  mean_active_set_size = 0
+  error_test = c()
+  for (i in 1:n_iterations){
+    train_index <- sample(1:length(y),length(y)*split_prop)
+    test_index <- setdiff(1:length(y), train_index)
+    
+    train2_index <- sample(train_index, length(train_index)*split_prop)
+    val_index <- setdiff(train_index, train2_index)
+    
+    X_train2 <- X[train2_index,]
+    y_train2 <- y[train2_index]
+    
+    X_val <- X[val_index,]
+    y_val <- y[val_index]
+    
+    X_test <- X[test_index,]
+    y_test <- y[test_index]
+    
+    results <- lars(X_train2, y_train2, option="lars", t_vec= c(10) , standardise=standardise)
+    betas <- results$beta
+    predictions_val <- as.matrix(X_val) %*% betas
+    
+    error_val <- colSums((predictions_val-y_val)**2) + results$t
+    
+    plot(error_val)
+    # e <- e + error_val/100 
+    
+    index_up_to <- which(min(error_val) == error_val)
+    mean_active_set_size <- mean_active_set_size + index_up_to/n_iterations
+    Active_set <- results$J
+    
+    betas_test <- betas[,index_up_to]
+    predictions_test <- as.matrix(X_test) %*% betas_test
+    # Inactive <- setdiff(1:length(results$t), Active_set[1:index_up_to])
+    error_test <- cbind(error_test, colSums((predictions_test-y_test)**2) + results$t[index_up_to])
+  }
   
-  train2_index <- sample(train_index, length(train_index)*0.9)
-  val_index <- setdiff(train_index, train2_index)
-  
-  X_train2 <- X[train2_index,]
-  y_train2 <- y[train2_index]
-  
-  X_val <- X[val_index,]
-  y_val <- y[val_index]
-  
-  X_test <- X[test_index,]
-  y_test <- y[test_index]
-  
-  results <- lars(X_train2, y_train2, option="lars", t_vec= c(10,10,10,10,10, 10, 10, 10,10), standardise=T)
-  betas <- results$beta
-  predictions_val <- as.matrix(X_val) %*% betas
-  
-  error_val <- colSums((predictions_val-y_val)**2) + results$t
-  
-  plot(error_val)
-  # e <- e + error_val/100 
-  print(index_up_to)
-  index_up_to <- which(min(error_val) == error_val)
-  
-  Active_set <- results$J
-  
-  betas_test <- betas[,index_up_to]
-  predictions_test <- as.matrix(X_test) %*% betas_test
-  # Inactive <- setdiff(1:length(results$t), Active_set[1:index_up_to])
-  error_test <- cbind(error_test, colSums((predictions_test-y_test)**2) + results$t[index_up_to])
+  return(list(error_test = as.vector(error_test), mean_active_set_size = mean_active_set_size) )
 }
 
 
-mean(error_test/length(y_test))
+res <- Cross_Validation_LARS(X = X, y=y , split_prop = 0.9, n_iterations = 100, standardise = T)
 
-plot(as.vector(error_test))
-error_test
-results$J
+res$error_test
+# class(results) <- "lars"
+# plot(results)
+# mean(error_test/length(y_test))
+# 
+# plot(as.vector(error_test))
+# error_test
+# results$J
+# mean_active_set_size
