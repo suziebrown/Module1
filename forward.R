@@ -6,16 +6,29 @@
 #' @param y vector of response variables
 #' 
 
-forward <- function(X, y, standardise=T) {
-  if (standardise){
-    X <- scale(X)
-    y <- y - mean(y)
+forward <- function(X, y, standardise=T, intercept=F) {
+  
+  ## Edit the data according to options
+  if (intercept){
+    X <- cbind(rep(1,nrow(X)), X) #include an intercept term (i.e. a constant covariate)
   }
+  if (standardise){
+    X <- scale(X) #centre and normalise X
+    y <- y - mean(y) #centre y
+  }
+  
   n <- nrow(X) #number of observations
   p <- ncol(X) #number of covariates
-  if (length(y)!=n){stop("number of observations on response not equal to number of observations on predictors")}
-  ind <- 1:p
+  
+  ## Check inputs are sensible
+  if (length(y)!=n){
+    stop("number of observations on response not equal to number of observations on predictors")
+  }
+  if (p>n) { #LSE can't be calculated with >n covariates, return NAs
+    warning("model parameters can only be estimated with up to n covariates, only returning first n models")
+  }
 
+  ## Initialise variables
   A <- numeric(0) #active set
   M <- matrix(NA, nrow=n, ncol=p+1) #matrix containing mu from each step (in columns)
   B <- matrix(NA, nrow=p, ncol=p+1) #matrix containing beta from each step (in columns)
@@ -24,10 +37,7 @@ forward <- function(X, y, standardise=T) {
   t <- 0 #vector containing L1 norm of beta at each step
   mu <- rep(0,n)
   J <- NA
-  
-  if (p>n) { #LSE can't be calculated with >n covariates, return NAs
-    warning("model parameters can only be estimated with up to n covariates, returning NA for higher-dimensional models")
-  }
+  ind <- 1:p
 
   for (i in 2:(min(n,p)+1)) {
     if(length(A)==0) { #create signed submatrix of X; case of empty A handled separately
