@@ -217,7 +217,7 @@ y <- y-mean(y)
 
 
 
-Cross_Validation_LARS <- function(X, y, split_prop, n_iterations, standardise){
+Cross_Validation_LARS <- function(X, y, split_prop, n_iterations, standardise, option){
   mean_active_set_size = 0
   error_test = c()
   for (i in 1:n_iterations){
@@ -259,9 +259,10 @@ Cross_Validation_LARS <- function(X, y, split_prop, n_iterations, standardise){
 }
 
 
-res <- Cross_Validation_LARS(X = X, y=y , split_prop = 0.9, n_iterations = 100, standardise = T)
+res <- Cross_Validation_LARS(X = X, y=y , split_prop = 0.9, n_iterations = 100, standardise = T, option = 'lars')
 
 res$error_test
+
 # class(results) <- "lars"
 # plot(results)
 # mean(error_test/length(y_test))

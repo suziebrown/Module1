@@ -133,7 +133,7 @@ lars <-function(X, y, option="lars", standardise=TRUE, intercept=FALSE){
 #' @param standardise should data be scaled and centred?
 #' 
 
-Cross_Validation_LARS <- function(X, y, split_prop, n_iterations, standardise){
+Cross_Validation_LARS <- function(X, y, split_prop, n_iterations, standardise, option){
   mean_active_set_size = 0
   error_test = c()
   for (i in 1:n_iterations){
@@ -152,7 +152,7 @@ Cross_Validation_LARS <- function(X, y, split_prop, n_iterations, standardise){
     X_test <- X[test_index,]
     y_test <- y[test_index]
     
-    results <- lars(X_train2, y_train2, option="lars", standardise=standardise)
+    results <- lars(X_train2, y_train2, option=option, standardise=standardise)
     betas <- results$beta
     predictions_val <- as.matrix(X_val) %*% betas
     
@@ -167,10 +167,8 @@ Cross_Validation_LARS <- function(X, y, split_prop, n_iterations, standardise){
     
     betas_test <- betas[,index_up_to]
     predictions_test <- as.matrix(X_test) %*% betas_test
-    # Inactive <- setdiff(1:length(results$t), Active_set[1:index_up_to])
-    error_test <- cbind(error_test, colSums((predictions_test-y_test)**2)) #+ results$t[index_up_to])
+    error_test <- cbind(error_test, colSums((predictions_test-y_test)**2) + results$t[index_up_to])
   }
-  
   return(list(mean_error_test = mean(error_test), mean_active_set_size = mean_active_set_size) )
 }
 
@@ -182,6 +180,6 @@ y <- Data[, 11]
 X <- scale(X)
 y <- y-mean(y)
 
-res <- Cross_Validation_LARS(X, y, 0.9, 50, T)
+res <- Cross_Validation_LARS(X, y, 0.9, 50, T, 'lasso')
 res$mean_active_set_size
 res$mean_error_test
