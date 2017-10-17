@@ -222,12 +222,13 @@ while (nVars < m){
       }
    t_prev = t_now
   }
+  
   mu = mu_old + gamma[i] * u_A # Update mean vector
   mu_old = mu
   beta = rbind(beta, t(beta_tmp))  
 }
 
-list(beta = t(beta), A = A, mu = mu, C = C, c = c, gamma = gamma, t = colSums(abs(t(beta))))
+list(beta = t(beta), J = A, mu = mu, C = C, c = c, gamma = gamma, t = colSums(abs(t(beta))), method = "LARS")
 }
 
 
@@ -253,7 +254,7 @@ results <- lars(X = X, y = y, t_vec = c(10,20, 1000, 20000), standardise = T)
 
 results <- lars(X = X, y = y, option='lasso', t_vec = c(10,20,30,40,50,60), standardise = T)
 
-
+results$t
 betas <- results
 class(betas) <- "lars"
 print(betas)
