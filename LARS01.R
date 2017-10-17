@@ -217,7 +217,7 @@ while (nVars < m){
   beta = rbind(beta, t(beta_tmp))  
 }
 
-list(beta = beta, A = A, mu = mu, C = C, c = c, gamma = gamma)
+list(beta = t(beta), A = A, mu = mu, C = C, c = c, gamma = gamma, colSums(abs(t(beta))))
 }
 
 
@@ -228,22 +228,22 @@ X <- Data[, 1:10]
 y <- Data[, 11]
 
 
-t_max = 1000
-t_vector <- 1:t_max
-results_beta <- vector("list", t_max)
-#results_beta = rep(0,10)
-for (t in t_vector){
-  results <- lars(X = X, y = y, t_vec = c(t), standardise = T)
-  results_beta[[t]] <- results$beta
-}
+#t_max = 1000
+#t_vector <- 1:t_max
+#results_beta <- vector("list", t_max)
+##results_beta = rep(0,10)
+#for (t in t_vector){
+#  results <- lars(X = X, y = y, t_vec = c(t), standardise = T)
+#  results_beta[[t]] <- results$beta
+#}
 
 #results <- lars(X = X, y = y, t_vec = c(10,20,30,40,50,60), standardise = T)
 
-results <- lars(X = X, y = y, t_vec = c(10,20,30,40,50,60), standardize = T, method = "LARS")
+results <- lars(X = X, y = y, t_vec = c(10,20,30,40,50,60), standardise = T)
 
 
 
-betas <- t(results)
+betas <- results
 class(betas) <- "lars"
 plot(betas)
 
