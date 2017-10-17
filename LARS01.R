@@ -7,7 +7,7 @@
 #' @param standardize should data be scaled and centred?
 #' @param t_vec Vector of bounds for the absolute sum of the betas
 
-lars <-function(X, Y, option, t, standardize=T){
+lars <-function(X, Y, option, t_vec, standardize=T){
 
 # Least Angle Regression (LAR) algorithm.
 # Ref: Efron et. al. (2004) Least angle regression. Annals of Statistics.
@@ -211,11 +211,12 @@ while (nVars < m){
   
   
   # Need to reread this works for t as 1-D vector not sure how it is supposed to work in more than 1
+  print(t_vec[1])
   if (Inf != t_vec[1]){
       t_now = sqrt(sum(beta_tmp[A]**2))
       if (t_prev < t_vec[1] && t_now >= t_vec[1]){
         beta_t[ii,A] = beta[i,A] + A_A %*% (t_vec[1]-t_prev) %*% t(w_A)    # Compute coefficient estimates corresponding to a specific t
-        t_vec = t_vec[-1]
+        #t_vec = t_vec[-1]
         ii = ii+1
       }
    t_prev = t_now
@@ -230,7 +231,21 @@ list(beta = beta, A = A, mu = mu, C = C, c = c, gamma = gamma)
 
 
 
+Data <- read.csv(file="diabetes.csv", header=TRUE, sep=",")
+Data <- Data[,-1]
+X <- Data[, 1:10]
+Y <- Data[, 11]
 
+
+t_max = 1000
+t_vector <- 1:t_max
+results_beta <- vector("list", t_max)
+#results_beta = rep(0,10)
+for (t in t_vector){
+  results <- lars(X = X, Y = Y, t_vec = c(t), standardize = T)
+  results_beta[[t]] <- results$beta
+}
+#results <- lars(X = X, Y = Y, t_vec = c(10,20,30,40,50,60), standardize = T)
 
 
 
