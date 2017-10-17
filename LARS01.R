@@ -45,7 +45,7 @@ p <- ncol(X)
 
 # Standardising the data 
 if (standardise){
-  X = scale(X)
+  #X = scale(X)
   y = y-mean(y)
 }
 
@@ -241,13 +241,13 @@ y <- Data[, 11]
 
 #results <- lars(X = X, y = y, t_vec = c(10,20,30,40,50,60), standardise = T)
 
-results <- lars(X = X, y = y, t_vec = c(10,20,30,40,50,60), standardise = T)
+results <- lars(X = X, y = y, t_vec = c(10,20, 1000, 20000), standardise = T)
 
 
 
 betas <- results
 class(betas) <- "lars"
-plot(betas)
+print(betas)
 
 ##############################################################################
 # MAYBE GO OVER THIS TOGETHER CAN T FIGURE OUT WHAT IS BEING DONE HERE
