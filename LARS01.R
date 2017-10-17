@@ -114,6 +114,8 @@ while (nVars < m){
   # New version
   ###############################################################
   s_A = sign(corr[A])
+  print('THESE ARE THE SA')
+  print(s_A)
   Ones_A = rep(1, length(A))
   
   # Update the Inactive set
@@ -182,7 +184,7 @@ while (nVars < m){
   }
    
   # Update coefficient estimates
-  beta_tmp[A] = beta[i,A] + gamma[i]*w_A   
+  beta_tmp[A] = beta[i,A] + gamma[i]*w_A*s_A 
   
   # Check the sign feasibility of lasso
   if (lasso){
@@ -204,10 +206,10 @@ while (nVars < m){
   # Need to reread this works for t as 1-D vector not sure how it is supposed to work in more than 1
   print(t_vec[1])
   if (Inf != t_vec[1]){
-      t_now = sqrt(sum(beta_tmp[A]**2))
+      t_now = sum(abs(beta_tmp[A]))
       if (t_prev < t_vec[1] && t_now >= t_vec[1]){
         beta_t[ii,A] = beta[i,A] + A_A %*% (t_vec[1]-t_prev) %*% t(w_A)    # Compute coefficient estimates corresponding to a specific t
-        #t_vec = t_vec[-1]
+        t_vec = t_vec[-1]
         ii = ii+1
       }
    t_prev = t_now
@@ -217,7 +219,7 @@ while (nVars < m){
   beta = rbind(beta, t(beta_tmp))  
 }
 
-list(beta = t(beta), A = A, mu = mu, C = C, c = c, gamma = gamma, colSums(abs(t(beta))))
+list(beta = t(beta), A = A, mu = mu, C = C, c = c, gamma = gamma, t = colSums(abs(t(beta))))
 }
 
 
