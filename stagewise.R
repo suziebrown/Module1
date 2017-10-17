@@ -7,6 +7,8 @@
 #' @param eps step size
 #' @param tol stop when mu is within tol of y
 #' @param N maximum number of steps
+#' @param standardise should the data be centred and normalised?
+#' @param intercept include an intercept term (i.e. constant covariate)
 #' 
 
 stagewise <- function(X, y, eps, tol=eps, N=1000, standardise=TRUE, intercept=FALSE) {

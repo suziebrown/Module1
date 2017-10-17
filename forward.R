@@ -4,6 +4,8 @@
 #' 
 #' @param X matrix of predictor variables
 #' @param y vector of response variables
+#' @param standardise should the data be centred and normalised?
+#' @param intercept include an intercept term (i.e. constant covariate)
 #' 
 
 forward <- function(X, y, standardise=T, intercept=F) {
