@@ -3,14 +3,13 @@
 #' Implements the LARS algorithm (Efron et. al. (2004) Least angle regression. Annals of Statistics.)
 #' 
 #' @param X matrix of predictor variables
-#' @param Y vector of response variables
-#' @param standardize should data be scaled and centred?
+#' @param y vector of response variables
+#' @param standardise should data be scaled and centred?
 #' @param t_vec Vector of bounds for the absolute sum of the betas
+#' 
 
-lars <-function(X, Y, option, t_vec, standardize=T){
+lars <-function(X, y, option="lars", t_vec, standardise=T){
 
-# Least Angle Regression (LAR) algorithm.
-# Ref: Efron et. al. (2004) Least angle regression. Annals of Statistics.
 # option = 'lar' implements the vanilla LAR algorithm (default);
 # option = 'lasso' solves the lasso path with a modified LAR algorithm.
 # t -- a vector of increasing positive real numbers. If given, LARS stops and 
@@ -26,18 +25,10 @@ lars <-function(X, Y, option, t_vec, standardize=T){
 # Note: history is traced by rows. If t is given, beta is just the
 # estimated coefficient vector at the constraint ||beta||_1 = t.
 #
-# Remarks:
-  # 1. LARS is originally proposed to estimate a sparse coefficient vector in
-# a noisy over-determined linear system. LARS outputs estimates for all
-# shrinkage/constraint parameters (homotopy).
-#
-# 2. LARS is well suited for Basis Pursuit (BP) purpose in the real case. This lars function
-# automatically terminates when the current correlations for inactive set are
+# This lars function automatically terminates when the current correlations for inactive set are
 # all zeros. The recovered coefficient vector is the last column of beta 
-# with the *lasso* option. Hence, this function provides a fast and 
-# efficient solution for the ell_1 minimization problem. 
-# Ref: Donoho and Tsaig (2006). Fast solution of ell_1 norm minimization problems when the solution may be sparse.
-
+# with the *lasso* option. 
+  
 # if nargin < 5, standardize = true; end
 # if nargin < 4, t = Inf; end
 # if nargin < 3, option = 'lar'; end
@@ -52,10 +43,10 @@ lasso = F
 n <- nrow(X)
 p <- ncol(X)
 
-# Standardizing the data 
-if (standardize){
+# Standardising the data 
+if (standardise){
   X = scale(X)
-  Y = Y-mean(Y)
+  y = y-mean(y)
 }
 
 # Maximal number of variables in the final active set
@@ -98,7 +89,7 @@ signOK = 1
 while (nVars < m){
   i = i+1
   # Current correlation
-  corr = t(X)%*%(Y-mu) 
+  corr = t(X)%*%(y-mu) 
   
   # Maximal current absolute correlation
   C = max(abs(corr)) 
@@ -135,10 +126,10 @@ while (nVars < m){
   invG_A = solve(G_A)
   
   # Computing the normalizing constant
-  A_A = 1/sqrt(t(Ones_A) %*% invG_A %*% Ones_A)
+  A_A = 1/sqrt(sum(invG_A))
   
   # Coefficients of equiangular vector u_A
-  w_A = A_A[1] * invG_A %*% Ones_A 
+  w_A = A_A[1] * rowSums(invG_A) 
   
   # Equiangular vector
   u_A = X_A %*% w_A  
@@ -234,7 +225,7 @@ list(beta = beta, A = A, mu = mu, C = C, c = c, gamma = gamma)
 Data <- read.csv(file="diabetes.csv", header=TRUE, sep=",")
 Data <- Data[,-1]
 X <- Data[, 1:10]
-Y <- Data[, 11]
+y <- Data[, 11]
 
 
 t_max = 1000
@@ -242,10 +233,14 @@ t_vector <- 1:t_max
 results_beta <- vector("list", t_max)
 #results_beta = rep(0,10)
 for (t in t_vector){
-  results <- lars(X = X, Y = Y, t_vec = c(t), standardize = T)
+  results <- lars(X = X, y = y, t_vec = c(t), standardise = T)
   results_beta[[t]] <- results$beta
 }
-results <- lars(X = X, Y = Y, t_vec = c(10,20,30,40,50,60), standardize = T, method = "LARS")
+
+#results <- lars(X = X, y = y, t_vec = c(10,20,30,40,50,60), standardise = T)
+
+results <- lars(X = X, y = y, t_vec = c(10,20,30,40,50,60), standardize = T, method = "LARS")
+
 
 
 betas <- t(results)
