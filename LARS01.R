@@ -217,7 +217,7 @@ while (nVars < m){
       t_now = sum(abs(beta_tmp[A]))
       if (t_prev < t_vec[1] && t_now >= t_vec[1]){
         beta_t[ii,A] = beta[i,A] + A_A %*% (t_vec[1]-t_prev) %*% t(w_A)    # Compute coefficient estimates corresponding to a specific t
-        t_vec = t_vec[-1]
+        # t_vec = t_vec[-1]
         ii = ii+1
       }
    t_prev = t_now
