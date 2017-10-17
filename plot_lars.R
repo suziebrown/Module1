@@ -16,3 +16,4 @@ plot.lars <- function(x, ...) {
   }
   legend("topleft",legend=1:p,col=1:p,lty=1)
 }
+
