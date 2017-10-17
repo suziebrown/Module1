@@ -109,10 +109,23 @@ lasso<-function(X,y,t1){
 }
 
 
-beta_mat<-beta_0
-for (t1 in c(0.1,0.2,0.5,1,2,5,10,20,30)){
-  beta_new<-lasso(X,y,t1)
-  beta_mat<-cbind(beta_mat,beta_new)
+lasso_wrap<-function(X,y,t1_range,beta_0){
+  beta_mat<-beta_0
+  for (t1 in t1_range){
+    beta_new<-lasso(X,y,t1)
+    beta_mat<-cbind(beta_mat,beta_new)
+  }
+  beta_mat<-matrix(beta_mat,9,length(t1_range)+1)
+  output<-list(beta=beta_mat, mu=NA, j=NA, method="Lasso")
+  
+  output
 }
-beta_mat<-matrix(beta_mat,9,10)
-beta_mat
+
+
+
+
+
+output<-lasso_wrap(X,y,1:40,beta_0)
+class(output)<-"lars"
+plot(output)
+
