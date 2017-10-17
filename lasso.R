@@ -93,7 +93,7 @@ lasso<-function(X,y,t1){
 
     beta_hat1<-constrOptim(beta_0,rss,rss_deriv,ui,ci)$par
     for (j in 1:p){
-      if (abs(beta_hat1[j])<1e-3){
+      if (abs(beta_hat1[j])<0.1){
         beta_hat1[j]=0
       }
     }
@@ -109,14 +109,18 @@ lasso<-function(X,y,t1){
 }
 
 
-lasso_wrap<-function(X,y,t1_range,beta_0){
-  beta_mat<-beta_0
+lasso_wrap<-function(X,y,t1_range,beta_start){
+  beta_mat<-beta_start
+  t_start<-0
+  t_vec<-t_start
   for (t1 in t1_range){
     beta_new<-lasso(X,y,t1)
     beta_mat<-cbind(beta_mat,beta_new)
+    t_vec<-c(t_vec,sum(abs(beta_new)))
   }
-  beta_mat<-matrix(beta_mat,9,length(t1_range)+1)
-  output<-list(beta=beta_mat, mu=NA, j=NA, method="Lasso")
+  beta_mat<-matrix(beta_mat,10,length(t1_range)+1)
+  
+  output<-list(beta=beta_mat, mu=NA, t=t_vec, j=NA, method="Lasso")
   
   output
 }
@@ -125,7 +129,16 @@ lasso_wrap<-function(X,y,t1_range,beta_0){
 
 
 
-output<-lasso_wrap(X,y,1:40,beta_0)
+output<-lasso_wrap(X,y,seq(from=1,to=4000,by=100),rep(0,10))
 class(output)<-"lars"
 plot(output)
 
+
+diabetes<-read.csv("diabetes.csv")
+dim(diabetes)
+head(diabetes)
+X<-as.matrix(diabetes[,2:11])
+y<-diabetes[,12]
+head(X)
+head(y)
+length(y)
