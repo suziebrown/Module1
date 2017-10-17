@@ -19,7 +19,7 @@ lasso<-function(X, y, t1_range, eps=1e-3, N=100, standardise=TRUE, intercept=FAL
   t_start<-0
   t_vec<-t_start
   for (t1 in t1_range){
-    beta_new<-lasso(X, y, t1, eps, N, standardise, intercept)
+    beta_new<-lasso_step(X, y, t1, eps, N, standardise, intercept)
     beta_mat<-cbind(beta_mat,beta_new)
     t_vec<-c(t_vec,sum(abs(beta_new)))
   }
