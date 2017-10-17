@@ -21,6 +21,7 @@ forward <- function(X, y, standardise=T) {
   B <- matrix(NA, nrow=p, ncol=p+1) #matrix containing beta from each step (in columns)
   M[,1] <- rep(0,n) #initial estimate is all zeroes
   B[,1] <- rep(0,p) #initial coeficients beta is all zeroes
+  t <- 0 #vector containing L1 norm of beta at each step
   mu <- rep(0,n)
   J <- NA
   
@@ -45,10 +46,11 @@ forward <- function(X, y, standardise=T) {
     mu <- X %*% beta
     M[,i] <- mu 
     B[,i] <- beta
+    t[i] <- sum(abs(beta))
     J <- c(J,j)
   }
   
-  out <- list(beta=B, mu=M, j=J, method="Forward")
+  out <- list(beta=B, mu=M, t=t, j=J, method="Forward")
   class(out) <- "lars"
   out
 }

@@ -49,6 +49,7 @@ stagewise <- function(X, y, eps, tol=eps, N=1000, standardise=TRUE, intercept=FA
   beta <- rep(0,p) #initial coeficients beta is all zeroes
   M <- mu #matrix containing mu from each step (in columns)
   B <- beta #matrix containing beta from each step (in columns)
+  t <- 0 #vector containing L1 norm of beta at each step
   J <- NA
   j <- 0
   delta <-0
@@ -76,6 +77,7 @@ stagewise <- function(X, y, eps, tol=eps, N=1000, standardise=TRUE, intercept=FA
       M <- c(M,mu)
       B <- c(B,beta)
       J <- c(J,j)
+      t <- c(t,sum(abs(beta)))
       count <- count + 1
   }
   
@@ -83,7 +85,7 @@ stagewise <- function(X, y, eps, tol=eps, N=1000, standardise=TRUE, intercept=FA
   B <- matrix(B, nrow=p)
   
   #return some stuff:
-  out <- list(beta=B, mu=M, j=J, method="Stagewise")
+  out <- list(beta=B, mu=M, t=t, j=J, method="Stagewise")
   class(out) <- "lars"
   out
   
