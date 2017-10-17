@@ -11,19 +11,19 @@
 
 stagewise <- function(X, y, eps, tol=eps, N=1000, standardise=TRUE, intercept=FALSE) {
 
-  n <- nrow(X) #number of observations
-  p <- ncol(X) #number of covariates
-  
   ## Edit the data according to options
   if (intercept){
-    X <- cbind(rep(1,n), X) #include an intercept term (i.e. a constant covariate)
+    X <- cbind(rep(1,nrow(X)), X) #include an intercept term (i.e. a constant covariate)
   }
   if (standardise){
     X <- scale(X) #centre and normalise X
     y <- y - mean(y) #centre y
   }
   
-  ##check inputs are sensible:
+  n <- nrow(X) #number of observations
+  p <- ncol(X) #number of covariates
+  
+  ## check inputs are sensible
   if (length(y)!=n){
     stop("number of observations on response not equal to number of observations on predictors")
   }
@@ -44,7 +44,7 @@ stagewise <- function(X, y, eps, tol=eps, N=1000, standardise=TRUE, intercept=FA
     warning("can't achieve tolerance lower than step size: setting tol=eps")
   }
   
-  ##initialise variables:
+  ## Initialise variables
   mu <- rep(0,n) #initial estimate is all zeroes
   beta <- rep(0,p) #initial coeficients beta is all zeroes
   M <- mu #matrix containing mu from each step (in columns)
