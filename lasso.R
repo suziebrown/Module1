@@ -11,6 +11,8 @@
 #' @param intercept option to add an intercept term to the covariate matrix
 #' 
 
+library(stats)
+
 lasso_step<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALSE){
   n <- nrow(X) #number of observations
   p <- ncol(X) #number of covariates
@@ -93,7 +95,7 @@ lasso_step<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALS
     ui<- -G_E
     ci<-rep(-t1,mod_E)
 
-    beta_hat1<-constrOptim(beta_0,rss,rss_deriv,ui,ci)$par
+    beta_hat1<-constrOptim(beta_0,rss,rss_deriv,ui,ci,outer.iterations = 200, outer.eps = 1e-10)$par
     # The numerical procedures will never shrink coefficients to exactly 0
     # If the absolute value is less than our chosen epsilon we say that is is identically 0
     for (j in 1:p){
@@ -109,7 +111,15 @@ lasso_step<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALS
       beta_hat1[j]=0
     }
   }
+  
+  # Finally, calculate the corresponding value of mu
+  
+  mu_hat<-X%*%beta_hat1
   # Output the value of beta that solves the constrained minimization problem
-  beta_hat1
+  # And the corresponding value of mu
+  
+  output<-list(beta=beta_hat1, mu=mu_hat)
+  output
+  
 }
 
