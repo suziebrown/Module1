@@ -62,7 +62,7 @@ forward <- function(X, y, standardise=T, intercept=F) {
     J <- c(J,j)
   }
   
-  out <- list(beta=B, mu=M, t=t, j=J, method="Forward")
+  out <- list(beta=B, resid = apply(M,2,function(x){y-x}), t=t, j=J, method="Forward")
   class(out) <- "lars"
   out
 }

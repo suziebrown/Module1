@@ -40,6 +40,7 @@ lars <-function(X, y, option="lars", standardise=TRUE, intercept=FALSE){
   A <- numeric(0) #active set
   Ac <- 1:p #inactive set
   signOK <- 1 #sign check for lasso
+  M <- rep(0,n)
   
   ## Let's go
   while (length(A) < m){
@@ -113,15 +114,18 @@ lars <-function(X, y, option="lars", standardise=TRUE, intercept=FALSE){
     
     mu <- mu_old + gamma[i] * u_A # Update mean vector
     mu_old <- mu
-    beta <- cbind(beta, beta_tmp)  
+    beta <- cbind(beta, beta_tmp)
+    M <- c(M, mu)
   }
+  
+  M <- matrix(M, nrow=n)
   
   ## which method name should be returned
   if (option == "lars"){method <- "LARS"}
   if (option == "lasso"){method <- "LARS-Lasso"}
   if (option == "stagewise"){method <- "LARS-Stagewise"}
   
-  out <- list(beta = beta, mu = mu, t = colSums(abs(beta)), method=method)
+  out <- list(beta = beta, resid = apply(M,2,function(x){y-x}), t = colSums(abs(beta)), method=method)
   class(out) <- "lars"
   out
 }

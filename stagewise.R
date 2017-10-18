@@ -87,7 +87,7 @@ stagewise <- function(X, y, eps, tol=eps, N=1000, standardise=TRUE, intercept=FA
   B <- matrix(B, nrow=p)
   
   #return some stuff:
-  out <- list(beta=B, mu=M, t=t, j=J, method="Stagewise")
+  out <- list(beta=B, resid = apply(M,2,function(x){y-x}), t=t, j=J, method="Stagewise")
   class(out) <- "lars"
   out
   
