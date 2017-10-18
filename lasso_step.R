@@ -111,13 +111,14 @@ lasso_step<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALS
     }
   }
   
-  # Finally, calculate the corresponding value of mu
+  # Finally, calculate the corresponding value of mu and the residuals
   
   mu_hat<-X%*%beta_hat1
+  resid_hat<-y-mu_hat
   # Output the value of beta that solves the constrained minimization problem
-  # And the corresponding value of mu
+  # And the corresponding value of the residuals
   
-  output<-list(beta=beta_hat1, mu=mu_hat)
+  output<-list(beta=beta_hat1, res=resid_hat)
   output
   
 }
