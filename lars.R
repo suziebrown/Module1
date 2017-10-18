@@ -46,7 +46,11 @@ lars <-function(X, y, option="lars", standardise=TRUE, intercept=FALSE){
   A <- numeric(0) #active set
   Ac <- 1:p #inactive set
   signOK <- 1 #sign check for lasso
+<<<<<<< Updated upstream:lars.R
   M <- rep(0,n)
+=======
+  P <- rep(0,m) # vector for stagewise Lasso
+>>>>>>> Stashed changes:LARS03.R
   
   ## Let's go
   while (length(A) < m){
@@ -71,7 +75,24 @@ lars <-function(X, y, option="lars", standardise=TRUE, intercept=FALSE){
     invG_A <- solve(G_A)
     alpha_A <- 1/sqrt(sum(invG_A)) # normalizing constant
     w_A <- alpha_A[1] * rowSums(invG_A) # Coefficients of equiangular vector u_A
+    
+    print('before the loooop')
+    
+    print(u_A)
+    # stagewise modification
+    if (option == "stagewise"){
+      # update the P vector storing occurances of the covariates
+      P[A] <- (P[A] +1)
+      # check for sign inconsistencies
+      #if (any(sign(beta_tmp[A] - t(beta[A,i])) != s_A)){
+      # update new direction u_A
+      v <- rowSums(P[A]/i * X_A)
+      w_A <- (t(w_A) %*% v)/sum(v**2) * v
+      
+      #}
+    }
     u_A <- X_A %*% w_A  # Equiangular vector
+    
     a <- t(X) %*% u_A # Angles/correlation between x_j and u_A
     
     # matrix to hold the two possibilities for the minimization to find gamma
@@ -94,6 +115,7 @@ lars <-function(X, y, option="lars", standardise=TRUE, intercept=FALSE){
     
     # Update coefficient estimates
     beta_tmp[A] <- t(beta[A,i]) + gamma[i]*w_A*s_A 
+    
     
     # Lasso modification
     if (option=="lasso"){
@@ -136,3 +158,81 @@ lars <-function(X, y, option="lars", standardise=TRUE, intercept=FALSE){
   out
 }
 
+<<<<<<< Updated upstream:lars.R
+=======
+#' @param X matrix of predictor variables
+#' @param y vector of response variables
+#' @param split_prop proportion to be split into training/test
+#' @param n_iterations number random validation procedures
+#' @param standardise should data be scaled and centred?
+#' @param plot_val Plot the validation error for n_iterations?
+#' 
+#' 
+#' Random Validation works by first of all splitting the whole dataset into trainig and test. We then split the training 
+#' again into training2 and validation. We then train on training2 and compute the error on the validation set. Next, we find the 
+#' set of betas (number of active betas) which gave us the lowest "validation error", the test set has not been contanimated 
+#' unitl now. Lastly we predict on the test set using the betas that gave us minimal "validation error" and compute the "test error". 
+#' We repeat n_iterations times.
+
+Cross_Validation_LARS <- function(X, y, split_prop, n_iterations, standardise, option, plot_val=F){
+  # Initialize vectors
+  mean_active_set_size = 0
+  error_test = c()
+  
+  for (i in 1:n_iterations){
+    # Splitting the data into training, training2 and test sets
+    train_index <- sample(1:length(y),length(y)*split_prop)
+    test_index <- setdiff(1:length(y), train_index)
+    
+    train2_index <- sample(train_index, length(train_index)*split_prop)
+    val_index <- setdiff(train_index, train2_index)
+    
+    X_train2 <- X[train2_index,]
+    y_train2 <- y[train2_index]
+    
+    X_val <- X[val_index,]
+    y_val <- y[val_index]
+    
+    X_test <- X[test_index,]
+    y_test <- y[test_index]
+    
+    # Training on the training2 set and computing the validation error
+    results <- lars(X_train2, y_train2, option=option, standardise=standardise)
+    betas <- results$beta
+    predictions_val <- as.matrix(X_val) %*% betas
+    
+    error_val <- colSums((predictions_val-y_val)**2) + results$t
+    
+    # Plotting the validation error for n_iterations
+    if (plot_val){
+      plot(error_val)
+    }
+    
+    # Find the optmial combination of betas
+    index_up_to <- which(min(error_val) == error_val)
+    mean_active_set_size <- mean_active_set_size + index_up_to/n_iterations
+
+    # Computing the test error
+    betas_test <- betas[,index_up_to]
+    predictions_test <- as.matrix(X_test) %*% betas_test
+    error_test <- cbind(error_test, colSums((predictions_test-y_test)**2) + results$t[index_up_to])
+  }
+  return(list(mean_error_test = mean(error_test), mean_active_set_size = mean_active_set_size))
+}
+
+
+# Testing the algorithm using the Diabetes dataset
+set.seed(100)
+Data <- read.csv(file="diabetes.csv", header=TRUE, sep=",")
+Data <- Data[,-1]
+X <- Data[, 1:10]
+y <- Data[, 11]
+X <- scale(X)
+y <- y-mean(y)
+
+temp <- results_stage <- lars(X, y, 'stagewise')
+plot(temp)
+res <- Cross_Validation_LARS(X, y, 0.9, 10, T, 'stagewise')
+res$mean_active_set_size
+res$mean_error_test
+>>>>>>> Stashed changes:LARS03.R

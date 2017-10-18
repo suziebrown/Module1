@@ -12,6 +12,7 @@ print.lars <- function(x, ...) {
   method <- x$method
   t <- x$t
   J <- x$j
+  resid <- x$resid
   
   cat("Linear regression model selection using ", method, "\n")
   
