@@ -16,7 +16,7 @@ head(diabetes)
 X<-as.matrix(diabetes[,2:11])
 y<-diabetes[,12]
 
-output<-lasso(X,y,seq(from=1,to=4000,by=100),eps=1, standardise=FALSE, intercept=FALSE)
+output<-lasso(X,y,seq(from=1,to=160,by=1),eps=1, standardise=TRUE, intercept=FALSE)
 plot(output)
 
 
