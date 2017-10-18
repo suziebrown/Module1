@@ -1,7 +1,6 @@
-#' Lasso wrapper
+#' Lasso step
 #' 
-#' Runs the Lasso algorithm for a range of t
-#' And outputs the results in the correct form
+#' Implements the Lasso algorithm for a specific t
 #' 
 #' @param X matrix of predictor variables
 #' @param y vector of response variables
@@ -11,6 +10,7 @@
 #' @param standardise option to centre and normalise the covariate matrix X
 #' @param intercept option to add an intercept term to the covariate matrix
 #' 
+
 
 lasso<-function(X, y, t1_range, eps=1e-3, N=100, standardise=TRUE, intercept=FALSE){
   n <- nrow(X) #number of observations

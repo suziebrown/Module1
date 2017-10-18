@@ -1,11 +1,17 @@
 #' Forward Selection 
 #' 
-#' Implements the Forward Selection algorithm
+#' Implements the Classic Forward Selection algorithm
 #' 
 #' @param X matrix of predictor variables
 #' @param y vector of response variables
 #' @param standardise should the data be centred and normalised?
 #' @param intercept include an intercept term (i.e. constant covariate)
+#' 
+#' @return an object of class "lars"
+#'
+#' @details Classic forward selection is a naive model selection tool for linear regression. It tends to be overly greedy and produce model trees that are very susceptible to perturbations of the data. It is not recommended to use this method for anything serious, but it might be fun as a toy.
+#' 
+#' @export forward
 #' 
 
 forward <- function(X, y, standardise=T, intercept=F) {
