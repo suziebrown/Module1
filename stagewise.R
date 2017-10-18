@@ -10,6 +10,12 @@
 #' @param standardise should the data be centred and normalised?
 #' @param intercept include an intercept term (i.e. constant covariate)
 #' 
+#' @return an object of class "lars"
+#'  
+#' @details Forward stagewise selection is a modification of classic forward selection which produces more stable results. However it is very computationally intensive. For actual application it is recommended to use the stagewise modification of LARS, which is much more efficient and produces the exact solutions rather than an approximation.
+#' 
+#' @export stagewise
+#' 
 
 stagewise <- function(X, y, eps, tol=eps, N=1000, standardise=TRUE, intercept=FALSE) {
 

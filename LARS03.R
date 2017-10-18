@@ -7,6 +7,12 @@
 #' @param option which variant of LARS should we run? one of "lars", "lasso", "stagewise"
 #' @param standardise should data be scaled and centred?
 #' 
+#' @return an object of class "lars"
+#' 
+#' @details LARS (Efron et. al. (2004) Least angle regression. Annals of Statistics.) is an efficient model selection algorithm, which can be thought of as an idealised version of both forward stagewise selection and the Lasso. This function allows implementation of standard LARS, or the stagewise or Lasso modification.
+#' 
+#' @export lars
+#' 
 
 lars <-function(X, y, option="lars", standardise=TRUE, intercept=FALSE){
 
