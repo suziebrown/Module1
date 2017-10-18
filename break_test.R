@@ -52,15 +52,6 @@ matplot(as.matrix(l1),t(coef(lasso1)[-1,]),type="l",lty=1,col=c(rep(1,9),2),ylab
 l2=log(lasso2$lambda)
 matplot(as.matrix(l2),t(coef(lasso2)[-1,]),type="l",lty=1,col=c(rep(1,9),2),ylab="coef",xlab="log(lambda)",main="Satisfies IRC")
 
-lars_out1 <- lars(X = X1, y = y1, t_vec = c(1,2,3,4,5), standardise = F)
-lars_out2 <- lars(X = X2, y = y2, t_vec = c(1,2,3,4,5), standardise = F)
-
-class(lars_out1) <- "lars"
-class(lars_out2) <- "lars"
-
-plot(lars_out1)
-plot(lars_out2)
-
 lasso_lars_out1 <- lars(X = X1, y = y1, option='lasso',  t_vec = c(1,2,3,4,5,6,7,8), standardise = F)
 lasso_lars_out2 <- lars(X = X2, y = y2, option='lasso',  t_vec = c(1,2,3,4,5,6,7,8), standardise = F)
 
@@ -75,3 +66,57 @@ lasso_out2<-lasso(X2,y2,1:10,eps=1e-2, standardise=FALSE, intercept=FALSE)
 
 plot(lasso_out1)
 plot(lasso_out2)
+
+
+
+lars_out1 <- lars(X = X1, y = y1, t_vec = c(1,2,3,4,5), standardise = F)
+lars_out2 <- lars(X = X2, y = y2, t_vec = c(1,2,3,4,5), standardise = F)
+
+class(lars_out1) <- "lars"
+class(lars_out2) <- "lars"
+
+# plot(lars_out1)
+# plot(lars_out2)
+pdf("break_plots.pdf",width=8, height=5)
+par(mfrow=c(1,2))
+op <- par(cex = 1)
+
+x<- lars_out1
+B <- x$beta
+method <- x$method
+t <- x$t
+p <- nrow(B)
+
+plot(NA, cex=0.8, xlim=range(t),ylim=range(B), ylab='betas', xlab='t', main="Evolution of betas using Sigma_1") 
+for (i in 1:5) {
+  lines(t, B[i,],col=i)
+}
+for (i in 2:p) {
+  lines(t, B[i,],col=i,lty=2)
+}
+op <- par(cex = 0.5)
+
+legend("topleft",legend=c("X_1","X_2","X_3","X_4","X_5","X_6","X_7","X_8","X_9","X_10"),col=1:p,lty=c(rep(1,5),rep(2,p-5)))
+
+op <- par(cex = 1)
+
+x<- lars_out2
+B <- x$beta
+method <- x$method
+t <- x$t
+p <- nrow(B)
+
+plot(NA, cex=0.8, xlim=range(t),ylim=range(B), ylab='betas', xlab='t', main="Evolution of betas using Sigma_2") 
+for (i in 1:5) {
+  lines(t, B[i,],col=i)
+}
+for (i in 2:p) {
+  lines(t, B[i,],col=i,lty=2)
+}
+op <- par(cex = 0.5)
+
+legend("topleft",legend=c("X_1","X_2","X_3","X_4","X_5","X_6","X_7","X_8","X_9","X_10"),col=1:p,lty=c(rep(1,5),rep(2,p-5)))
+
+dev.off()
+
+
