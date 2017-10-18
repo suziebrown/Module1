@@ -131,12 +131,22 @@ lars <-function(X, y, option="lars", standardise=TRUE, intercept=FALSE){
 #' @param split_prop proportion to be split into training/test
 #' @param n_iterations number random validation procedures
 #' @param standardise should data be scaled and centred?
+#' @param plot_val Plot the validation error for n_iterations?
 #' 
+#' 
+#' Random Validation works by first of all splitting the whole dataset into trainig and test. We then split the training 
+#' again into training2 and validation. We then train on training2 and compute the error on the validation set. Next, we find the 
+#' set of betas (number of active betas) which gave us the lowest "validation error", the test set has not been contanimated 
+#' unitl now. Lastly we predict on the test set using the betas that gave us minimal "validation error" and compute the "test error". 
+#' We repeat n_iterations times.
 
-Cross_Validation_LARS <- function(X, y, split_prop, n_iterations, standardise, option){
+Cross_Validation_LARS <- function(X, y, split_prop, n_iterations, standardise, option, plot_val=F){
+  # Initialize vectors
   mean_active_set_size = 0
   error_test = c()
+  
   for (i in 1:n_iterations){
+    # Splitting the data into training, training2 and test sets
     train_index <- sample(1:length(y),length(y)*split_prop)
     test_index <- setdiff(1:length(y), train_index)
     
@@ -152,27 +162,33 @@ Cross_Validation_LARS <- function(X, y, split_prop, n_iterations, standardise, o
     X_test <- X[test_index,]
     y_test <- y[test_index]
     
+    # Training on the training2 set and computing the validation error
     results <- lars(X_train2, y_train2, option=option, standardise=standardise)
     betas <- results$beta
     predictions_val <- as.matrix(X_val) %*% betas
     
     error_val <- colSums((predictions_val-y_val)**2) + results$t
     
-    plot(error_val)
-    # e <- e + error_val/100 
+    # Plotting the validation error for n_iterations
+    if (plot_val){
+      plot(error_val)
+    }
     
+    # Find the optmial combination of betas
     index_up_to <- which(min(error_val) == error_val)
     mean_active_set_size <- mean_active_set_size + index_up_to/n_iterations
-    Active_set <- results$J
-    
+
+    # Computing the test error
     betas_test <- betas[,index_up_to]
     predictions_test <- as.matrix(X_test) %*% betas_test
     error_test <- cbind(error_test, colSums((predictions_test-y_test)**2) + results$t[index_up_to])
   }
-  return(list(mean_error_test = mean(error_test), mean_active_set_size = mean_active_set_size) )
+  return(list(mean_error_test = mean(error_test), mean_active_set_size = mean_active_set_size))
 }
 
 
+# Testing the algorithm using the Diabetes dataset
+set.seed(100)
 Data <- read.csv(file="diabetes.csv", header=TRUE, sep=",")
 Data <- Data[,-1]
 X <- Data[, 1:10]
@@ -180,6 +196,6 @@ y <- Data[, 11]
 X <- scale(X)
 y <- y-mean(y)
 
-res <- Cross_Validation_LARS(X, y, 0.9, 50, T, 'lasso')
+res <- Cross_Validation_LARS(X, y, 0.9, 10, T, 'lasso')
 res$mean_active_set_size
 res$mean_error_test
