@@ -1,6 +1,7 @@
-#' Lasso step
+#' Lasso wrapper
 #' 
-#' Implements the Lasso algorithm for a specific t
+#' Runs the Lasso algorithm for a range of t
+#' And outputs the results in the correct form
 #' 
 #' @param X matrix of predictor variables
 #' @param y vector of response variables
@@ -51,6 +52,7 @@ lasso_step<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALS
   # Calculate the residual sum of squares and it's derivative for use later
   
   rss<-function(beta) t(y-X%*%beta)%*%(y-X%*%beta)
+  
   rss_deriv<-function(beta) -2*t(X)%*%(y-X%*%beta)
   
   if (n>p){
@@ -64,7 +66,7 @@ lasso_step<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALS
   # Using this beta_hat we start the algorithm using the K-T conditions
   
   delta=sign(beta_hat)
-
+  
   # Determine the size of the starting set E
   mod_E=1
   # Calculate the inequality constraint matrix
@@ -74,7 +76,7 @@ lasso_step<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALS
   ci<-rep(-t1,mod_E)
   # Perform a constrained minimization step to attempt to find solution satisfying the lasso constraints
   beta_hat1<-constrOptim(beta_0,rss,rss_deriv,ui,ci,outer.iterations = 200, outer.eps = 1e-10)$par
-
+  
   # Now start the algorithm to find the constrained solution
   count=1
   while(sum(abs(beta_hat1))>t1){
@@ -91,8 +93,8 @@ lasso_step<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALS
     # Get constraints in the correct form for constrOptim
     ui<- -G_E
     ci<-rep(-t1,mod_E)
-
-    beta_hat1<-constrOptim(beta_0,rss,rss_deriv,ui,ci)$par
+    
+    beta_hat1<-constrOptim(beta_0,rss,rss_deriv,ui,ci,outer.iterations = 200, outer.eps = 1e-10)$par
     # The numerical procedures will never shrink coefficients to exactly 0
     # If the absolute value is less than our chosen epsilon we say that is is identically 0
     for (j in 1:p){
@@ -102,13 +104,21 @@ lasso_step<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALS
     }
     count<-count+1
   }
-
+  
   for (j in 1:p){
     if (abs(beta_hat1[j])<eps){
       beta_hat1[j]=0
     }
   }
+  
+  # Finally, calculate the corresponding value of mu
+  
+  mu_hat<-X%*%beta_hat1
   # Output the value of beta that solves the constrained minimization problem
-  beta_hat1
+  # And the corresponding value of mu
+  
+  output<-list(beta=beta_hat1, mu=mu_hat)
+  output
+  
 }
 
