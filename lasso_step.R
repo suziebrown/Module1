@@ -1,7 +1,6 @@
-#' Lasso wrapper
+#' Lasso step
 #' 
-#' Runs the Lasso algorithm for a range of t
-#' And outputs the results in the correct form
+#' Implements the Lasso algorithm for a specific t
 #' 
 #' @param X matrix of predictor variables
 #' @param y vector of response variables
@@ -11,9 +10,6 @@
 #' @param standardise option to centre and normalise the covariate matrix X
 #' @param intercept option to add an intercept term to the covariate matrix
 #' 
-
-<<<<<<< HEAD
-library(stats)
 
 lasso_step<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALSE){
   n <- nrow(X) #number of observations
@@ -55,7 +51,6 @@ lasso_step<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALS
   # Calculate the residual sum of squares and it's derivative for use later
   
   rss<-function(beta) t(y-X%*%beta)%*%(y-X%*%beta)
-
   rss_deriv<-function(beta) -2*t(X)%*%(y-X%*%beta)
   
   if (n>p){
@@ -97,7 +92,7 @@ lasso_step<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALS
     ui<- -G_E
     ci<-rep(-t1,mod_E)
 
-    beta_hat1<-constrOptim(beta_0,rss,rss_deriv,ui,ci,outer.iterations = 200, outer.eps = 1e-10)$par
+    beta_hat1<-constrOptim(beta_0,rss,rss_deriv,ui,ci)$par
     # The numerical procedures will never shrink coefficients to exactly 0
     # If the absolute value is less than our chosen epsilon we say that is is identically 0
     for (j in 1:p){
@@ -113,32 +108,7 @@ lasso_step<-function(X, y, t1, eps=1e-3, N=100, standardise=TRUE, intercept=FALS
       beta_hat1[j]=0
     }
   }
-  
-  # Finally, calculate the corresponding value of mu
-  
-  mu_hat<-X%*%beta_hat1
   # Output the value of beta that solves the constrained minimization problem
-  # And the corresponding value of mu
-  
-  output<-list(beta=beta_hat1, mu=mu_hat)
-  output
-  
-=======
-lasso<-function(X, y, t1_range, eps=1e-3, N=100, standardise=TRUE, intercept=FALSE){
-  p <- ncol(X) #number of covariates
-  # Initialize matrices for the betas and the L1 norm t
-  beta_mat<-rep(0,p)
-  t_start<-0
-  t_vec<-t_start
-  for (t1 in t1_range){
-    beta_new<-lasso_step(X, y, t1, eps, N, standardise, intercept)
-    beta_mat<-cbind(beta_mat,beta_new)
-    t_vec<-c(t_vec,sum(abs(beta_new)))
-  }
-  beta_mat<-matrix(beta_mat,p,length(t1_range)+1)
-  
-  output<-list(beta=beta_mat, resid=NA, t=t_vec, j=NA, method="Lasso")
-  class(output)<-"lars"
-  output
->>>>>>> 1cca97b3c6cbfca2fa5a7a0314e82873ba45f1b1
+  beta_hat1
 }
+
